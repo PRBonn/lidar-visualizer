@@ -1,0 +1,51 @@
+[project]
+name = "lidar_visualizer"
+description = "A LiDAR visualization tool for all your datasets"
+version = "0.0.1"
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = ["LiDAR", "Robotics", "Visualization"]
+authors = [
+  {name = "Ignacio Vizzo", email = "ignaciovizzo@gmail.com"},
+]
+
+requires-python = ">=3.7"
+dependencies = [
+    "numpy",
+    "tqdm",
+    "pyntcloud",
+    "trimesh",
+    "rosbags",
+    "open3d>=0.13",
+    "typer[all]>=0.6.0",
+    "kiss-icp>=0.2.9",
+]
+classifiers  = [
+  "Operating System :: Unix",
+  "Operating System :: MacOS",
+  "Operating System :: Microsoft :: Windows",
+  "Programming Language :: C++",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Education",
+  "Intended Audience :: Other Audience",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+]
+
+[project.urls]
+homepage = "https://github.com/PRBonn/lidar-visualizer"
+
+[project.scripts]
+lidar_visualizer = "lidar_visualizer.visualize_dataset:main"
+
+[tool.black]
+line-length = 100
+
+[tool.isort]
+profile = "black"
