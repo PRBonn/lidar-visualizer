@@ -10,16 +10,7 @@ authors = [
 ]
 
 requires-python = ">=3.7"
-dependencies = [
-    "numpy",
-    "tqdm",
-    "pyntcloud",
-    "trimesh",
-    "rosbags",
-    "open3d>=0.13",
-    "typer[all]>=0.6.0",
-    "kiss-icp>=0.2.9",
-]
+dependencies = [ "kiss-icp>=0.2.9" ]
 classifiers  = [
   "Operating System :: Unix",
   "Operating System :: MacOS",
