@@ -1,8 +1,8 @@
-# LiDAR Visualizer
+# LiDAR Visualizer 🚀
 
-A flexible, easy to use, LiDAR (or any point cloud) visualizer for Linux, Windows and macOS.
+A flexible, easy-to-use, LiDAR (or any point cloud) visualizer for Linux, Windows, and macOS.
 
-If you also need to obtain poses from your dataset, considering checking out [KISS-ICP](https://github.com/PRBonn/kiss-icp), a LiDAR Odometry pipeline that just works. This simple visualizer is nothing but a wrapper around all the machinery built for KISS-ICP.
+If you also need to obtain poses from your dataset, consider checking out [KISS-ICP](https://github.com/PRBonn/kiss-icp), a LiDAR Odometry pipeline that just works. This simple visualizer is nothing but a wrapper around all the machinery built for KISS-ICP.
 
 ## Install
 
