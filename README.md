@@ -17,7 +17,7 @@ lidar_visualizer --help
 ```
 
 This should print the following help message:
-![out]()
+![out](https://user-images.githubusercontent.com/21349875/234676152-ce1706f3-801a-4532-8eda-f447f27f9c0d.png)
 
 
 ## Citation
