@@ -31,7 +31,7 @@ from kiss_icp.datasets import (
     sequence_dataloaders,
     supported_file_extensions,
 )
-from kiss_icp.tools.cmd import guess_dataloader, name_callback
+from kiss_icp.tools.cmd import guess_dataloader, name_callback, version_callback
 from kiss_icp.tools.visualizer import RegistrationVisualizer
 from tqdm import tqdm
 
@@ -210,6 +210,13 @@ def visualize_dataset(
         show_default=False,
         help="[Optional] For Ouster pcap dataloader, specify metadata json file path explicitly",
         rich_help_panel="Additional Options",
+    ),
+    version: Optional[bool] = typer.Option(
+        None,
+        "--version",
+        help="Show the current version of KISS-ICP",
+        callback=version_callback,
+        is_eager=True,
     ),
 ):
     if not dataloader:
