@@ -31,9 +31,19 @@ from kiss_icp.datasets import (
     sequence_dataloaders,
     supported_file_extensions,
 )
-from kiss_icp.tools.cmd import guess_dataloader, name_callback, version_callback
+from kiss_icp.tools.cmd import guess_dataloader, name_callback
 from kiss_icp.tools.visualizer import RegistrationVisualizer
 from tqdm import tqdm
+
+
+def version_callback(value: bool):
+    from kiss_icp.tools.cmd import version_callback as kiss_icp_version_callback
+
+    if value:
+        import lidar_visualizer
+
+        print(f"Lidar Visualizer Version: {lidar_visualizer.__version__}")
+        return kiss_icp_version_callback(value)
 
 
 class Visualizer(RegistrationVisualizer):
