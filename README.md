@@ -18,10 +18,6 @@ Next, follow the instructions on how to run the system by typing:
 lidar_visualizer --help
 ```
 
-This should print the following help message:
-![out](https://user-images.githubusercontent.com/21349875/234676152-ce1706f3-801a-4532-8eda-f447f27f9c0d.png)
-
-
 ## Citation
 
 If you use this visualizer for any academic work, please cite our original [paper](https://www.ipb.uni-bonn.de/wp-content/papercite-data/pdf/vizzo2023ral.pdf).
