@@ -136,19 +136,19 @@ docstring = f"""
 \b
 [bold green]Examples: [/bold green]
 # Visualize all pointclouds in the given <data-dir> \[{", ".join(supported_file_extensions())}]
-$ visualize_dataset <data-dir>:open_file_folder:
+$ lidar_visualizer <data-dir>:open_file_folder:
 
 # Visualize a given [bold]ROS1/ROS2 [/bold]rosbag file (directory:open_file_folder:, ".bag":page_facing_up:, or "metadata.yaml":page_facing_up:)
-$ visualize_dataset <path-to-my-rosbag>[:open_file_folder:/:page_facing_up:]
+$ lidar_visualizer <path-to-my-rosbag>[:open_file_folder:/:page_facing_up:]
 
 # Visualize [bold]mcap [/bold] recording
-$ visualize_dataset <path-to-file.mcap>:page_facing_up:
+$ lidar_visualizer <path-to-file.mcap>:page_facing_up:
 
 # Visualize [bold]Ouster pcap[/bold] recording (requires ouster-sdk Python package installed)
-$ visualize_dataset <path-to-ouster.pcap>:page_facing_up: \[--meta <path-to-metadata.json>:page_facing_up:]
+$ lidar_visualizer <path-to-ouster.pcap>:page_facing_up: \[--meta <path-to-metadata.json>:page_facing_up:]
 
 # Use a more specific dataloader: {", ".join(available_dataloaders())}
-$ visualize_dataset --dataloader kitti --sequence 07 <path-to-kitti-root>:open_file_folder:
+$ lidar_visualizer --dataloader kitti --sequence 07 <path-to-kitti-root>:open_file_folder:
 
 """
 
@@ -156,7 +156,7 @@ app = typer.Typer(add_completion=False, rich_markup_mode="rich")
 
 
 @app.command(help=docstring)
-def visualize_dataset(
+def lidar_visualizer(
     data: Path = typer.Argument(
         ...,
         help="The data directory used by the specified dataloader",

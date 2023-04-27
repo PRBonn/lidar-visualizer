@@ -33,7 +33,7 @@ classifiers  = [
 homepage = "https://github.com/PRBonn/lidar-visualizer"
 
 [project.scripts]
-lidar_visualizer = "lidar_visualizer.visualize_dataset:main"
+lidar_visualizer = "lidar_visualizer.lidar_visualizer:main"
 
 [tool.black]
 line-length = 100
