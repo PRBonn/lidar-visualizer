@@ -60,7 +60,7 @@ class Visualizer(RegistrationVisualizer):
             self.stop_idx = self.n_scans + jump
 
         self.idx = jump
-        self.pbar = tqdm(total=self.n_scans)
+        self.pbar = tqdm(total=self.n_scans, dynamic_ncols=True)
         self.update_pbar()
 
     def run(self):
