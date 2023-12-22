@@ -33,7 +33,7 @@ from lidar_visualizer.datasets import (
     jumpable_dataloaders,
     supported_file_extensions,
 )
-from lidar_visualizer.tools.visualizer import Visualizer
+from lidar_visualizer.visualizer import Visualizer
 
 
 def version_callback(value: bool):

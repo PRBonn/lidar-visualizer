@@ -43,7 +43,7 @@ class RosbagDataset:
             print('rosbags library not installed, run "pip install -U rosbags"')
             sys.exit(1)
 
-        from lidar_visualizer.tools.point_cloud2 import read_point_cloud
+        from lidar_visualizer.datasets.point_cloud2 import read_point_cloud
 
         self.read_point_cloud = read_point_cloud
 

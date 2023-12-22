@@ -42,7 +42,9 @@ def available_dataloaders() -> List:
     import pkgutil
 
     pkgpath = os.path.dirname(__file__)
-    return [name for _, name, _ in pkgutil.iter_modules([pkgpath])]
+    dataloaders = [name for _, name, _ in pkgutil.iter_modules([pkgpath])]
+    dataloaders.remove("point_cloud2")
+    return dataloaders
 
 
 def jumpable_dataloaders():

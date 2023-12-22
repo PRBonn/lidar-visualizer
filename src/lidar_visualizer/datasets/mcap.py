@@ -35,7 +35,7 @@ class McapDataloader:
             print("mcap plugins not installed: 'pip install mcap-ros2-support'")
             exit(1)
 
-        from lidar_visualizer.tools.point_cloud2 import read_point_cloud
+        from lidar_visualizer.datasets.point_cloud2 import read_point_cloud
 
         # we expect `data_dir` param to be a path to the .mcap file, so rename for clarity
         assert os.path.isfile(data_dir), "mcap dataloader expects an existing MCAP file"
