@@ -10,7 +10,7 @@ authors = [
 ]
 
 requires-python = ">=3.7"
-dependencies = [ 
+dependencies = [
   "natsort",
   "numpy",
   "open3d>=0.17.0",
