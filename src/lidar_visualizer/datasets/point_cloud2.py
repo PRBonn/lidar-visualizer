@@ -35,13 +35,8 @@ import sys
 from typing import Iterable, List, Optional, Tuple
 
 import numpy as np
-
-try:
-    from rosbags.typesys.types import sensor_msgs__msg__PointCloud2 as PointCloud2
-    from rosbags.typesys.types import sensor_msgs__msg__PointField as PointField
-except ImportError as e:
-    raise ImportError('rosbags library not installed, run "pip install -U rosbags"') from e
-
+from rosbags.typesys.types import sensor_msgs__msg__PointCloud2 as PointCloud2
+from rosbags.typesys.types import sensor_msgs__msg__PointField as PointField
 
 _DATATYPES = {}
 _DATATYPES[PointField.INT8] = np.dtype(np.int8)

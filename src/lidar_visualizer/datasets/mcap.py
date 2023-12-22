@@ -23,17 +23,14 @@
 import os
 import sys
 
+from mcap.reader import make_reader
+from mcap_ros2.reader import read_ros2_messages
+
 
 class McapDataloader:
     def __init__(self, data_dir: str, topic: str, *_, **__):
         """Standalone .mcap dataloader withouth any ROS distribution."""
         # Conditional imports to avoid injecting dependencies for non mcap users
-        try:
-            from mcap.reader import make_reader
-            from mcap_ros2.reader import read_ros2_messages
-        except ImportError as e:
-            print("mcap plugins not installed: 'pip install mcap-ros2-support'")
-            exit(1)
 
         from lidar_visualizer.datasets.point_cloud2 import read_point_cloud
 

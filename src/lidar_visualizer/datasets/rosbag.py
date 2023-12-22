@@ -26,6 +26,9 @@ from pathlib import Path
 from typing import Sequence
 
 import natsort
+from rosbags.highlevel import AnyReader
+
+from lidar_visualizer.datasets.point_cloud2 import read_point_cloud
 
 
 class RosbagDataset:
@@ -37,13 +40,6 @@ class RosbagDataset:
 
         TODO: Merge mcap and rosbag dataloaders into 1
         """
-        try:
-            from rosbags.highlevel import AnyReader
-        except ModuleNotFoundError:
-            print('rosbags library not installed, run "pip install -U rosbags"')
-            sys.exit(1)
-
-        from lidar_visualizer.datasets.point_cloud2 import read_point_cloud
 
         self.read_point_cloud = read_point_cloud
 

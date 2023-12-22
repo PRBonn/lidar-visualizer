@@ -11,9 +11,12 @@ authors = [
 
 requires-python = ">=3.7, <3.11"
 dependencies = [
+  "mcap",
+  "mcap-ros2-support",
   "natsort",
   "numpy",
   "pyntcloud",
+  "rosbags",
   "tqdm",
   "trimesh",
   "open3d>=0.16.0",
