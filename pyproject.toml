@@ -9,14 +9,14 @@ authors = [
   {name = "Ignacio Vizzo", email = "ignaciovizzo@gmail.com"},
 ]
 
-requires-python = ">=3.9"
+requires-python = ">=3.7, <3.11"
 dependencies = [
   "natsort",
   "numpy",
-  "open3d",
   "pyntcloud",
   "tqdm",
   "trimesh",
+  "open3d>=0.16.0",
   "ouster-sdk>=0.7.1",
   "typer[all]>=0.6.0",
 ]
