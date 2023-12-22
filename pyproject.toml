@@ -13,7 +13,7 @@ requires-python = ">=3.7"
 dependencies = [ 
   "natsort",
   "numpy",
-  "open3d>=0.16.0",
+  "open3d>=0.17.0",
   "ouster-sdk>=0.7.1",
   "pyntcloud",
   "tqdm",
