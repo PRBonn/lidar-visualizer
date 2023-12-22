@@ -10,7 +10,17 @@ authors = [
 ]
 
 requires-python = ">=3.7"
-dependencies = [ "kiss-icp>=0.2.9" ]
+dependencies = [ 
+  "natsort",
+  "numpy",
+  "open3d>=0.16.0",
+  "ouster-sdk>=0.7.1",
+  "pyntcloud",
+  "tqdm",
+  "trimesh",
+  "typer[all]>=0.6.0",
+]
+
 classifiers  = [
   "Operating System :: Unix",
   "Operating System :: MacOS",
