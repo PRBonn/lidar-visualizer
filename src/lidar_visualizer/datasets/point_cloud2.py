@@ -56,38 +56,40 @@ _DATATYPES[PointField.FLOAT64] = np.dtype(np.float64)
 DUMMY_FIELD_PREFIX = "unnamed_field"
 
 
-def read_point_cloud(msg: PointCloud2) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Extract poitns and timestamps from a PointCloud2 message.
+import matplotlib.cm as cm
 
-    :return: Tuple of [points, timestamps]
-        points: array of x, y z points, shape: (N, 3)
-        timestamps: array of per-pixel timestamps, shape: (N,)
-    """
+# WRAP INSIDE CLAS
+import open3d as o3d
+
+CMAP = cm.viridis
+
+
+def read_point_cloud(msg: PointCloud2):
     field_names = ["x", "y", "z"]
-    t_field = None
+    intensity_field = None
     for field in msg.fields:
-        if field.name in ["t", "timestamp", "time"]:
-            t_field = field.name
-            field_names.append(t_field)
+        if field.name in ["intensity"]:
+            intensity_field = field.name
+            field_names.append(intensity_field)
             break
 
     points_structured = read_points(msg, field_names=field_names)
     points = np.column_stack(
-        [points_structured["x"], points_structured["y"], points_structured["z"]]
+        [
+            points_structured["x"],
+            points_structured["y"],
+            points_structured["z"],
+        ]
     )
+    scan = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(points))
+    if intensity_field:
+        intensity = points_structured[intensity_field].astype(np.float64)
+        intensity = intensity / intensity.max()
+        scan.colors = o3d.utility.Vector3dVector(CMAP(intensity)[:, :3].reshape(-1, 3))
 
-    # Remove nan if any
-    points = points[~np.any(np.isnan(points), axis=1)]
-
-    if t_field:
-        timestamps = points_structured[t_field].astype(np.float64)
-        min_timestamp = np.min(timestamps)
-        max_timestamp = np.max(timestamps)
-        timestamps = (timestamps - min_timestamp) / (max_timestamp - min_timestamp)
-    else:
-        timestamps = np.ones(points.shape[0])
-    return points.astype(np.float64), timestamps
+    scan.remove_duplicated_points()
+    scan.remove_non_finite_points()
+    return scan
 
 
 def read_points(

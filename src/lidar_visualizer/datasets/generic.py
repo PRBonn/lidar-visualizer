@@ -107,7 +107,6 @@ class GenericDataset:
         except:
             tried_libraries.append("open3d")
 
-        # first try trimesh
         try:
             import trimesh
 
@@ -118,7 +117,6 @@ class GenericDataset:
         except:
             tried_libraries.append("trimesh")
 
-        # then try pyntcloud
         try:
             from pyntcloud import PyntCloud
 
