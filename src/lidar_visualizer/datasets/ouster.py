@@ -85,9 +85,10 @@ class OusterDataloader:
         try:
             import ouster.pcap as pcap
             from ouster import client
-        except ImportError:
-            print(f'ouster-sdk is not installed on your system, run "pip install ouster-sdk"')
-            exit(1)
+        except ModuleNotFoundError as e:
+            raise ModuleNotFoundError(
+                f'ouster-sdk is not installed on your system, run "pip install ouster-sdk"'
+            ) from e
 
         # since we import ouster-sdk's client module locally, we keep it locally as well
         self._client = client

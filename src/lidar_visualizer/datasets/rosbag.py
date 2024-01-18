@@ -39,9 +39,10 @@ class RosbagDataset:
         """
         try:
             from rosbags.highlevel import AnyReader
-        except ModuleNotFoundError:
-            print('rosbags library not installed, run "pip install -U rosbags"')
-            sys.exit(1)
+        except ModuleNotFoundError as e:
+            raise ModuleNotFoundError(
+                'rosbags library not installed, run "pip install -U rosbags"'
+            ) from e
 
         from lidar_visualizer.datasets.point_cloud2 import read_point_cloud
 
