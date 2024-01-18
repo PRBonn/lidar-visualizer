@@ -27,8 +27,6 @@ import os
 from typing import Optional
 
 import numpy as np
-import ouster.pcap as pcap
-from ouster import client
 
 
 def find_metadata_json(pcap_file: str) -> str:
@@ -83,6 +81,14 @@ class OusterDataloader:
             json file with the longest commong prefix of the pcap file (`data_dir`) in
             the same directory.
         """
+
+        try:
+            import ouster.pcap as pcap
+            from ouster import client
+        except ImportError:
+            print(f'ouster-sdk is not installed on your system, run "pip install ouster-sdk"')
+            exit(1)
+
         # since we import ouster-sdk's client module locally, we keep it locally as well
         self._client = client
 
