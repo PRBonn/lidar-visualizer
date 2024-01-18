@@ -30,17 +30,14 @@ from tqdm import tqdm
 
 class Visualizer:
     def __init__(self, dataset, n_scans: int = -1, jump: int = 0):
-        # Open3D is a big monster. This package dependes 100% on it, but each user will need to
-        # figure out how to install it properly
         try:
             self.o3d = importlib.import_module("open3d")
-        except ModuleNotFoundError:
-            print(
+        except ModuleNotFoundError as e:
+            raise ModuleNotFoundError(
                 "Open3D is not installed on your system, to fix this either "
                 'run "pip install open3d" '
                 "or check https://www.open3d.org/docs/release/getting_started.html"
-            )
-            exit(1)
+            ) from e
         # Initialize GUI controls
         self.block_vis = True
         self.play_crun = False
@@ -74,7 +71,7 @@ class Visualizer:
             self.advance()
 
     def update(self, poll_events=True):
-        source = self._get_frame(self.idx)
+        source = self._dataset[self.idx]
         self._update_geometries(source)
         while poll_events:
             self.vis.poll_events()
@@ -105,16 +102,10 @@ class Visualizer:
         self.rewind()
         self.update(False)
 
-    def _get_frame(self, idx):
-        dataframe = self._dataset[idx]
-        try:
-            frame, _ = dataframe
-        except ValueError:
-            frame = dataframe
-        return frame
-
     def _update_geometries(self, source):
-        self.source.points = self.o3d.utility.Vector3dVector(source)
+        self.source.points = source.points
+        self.source.colors = source.colors
+        self.source.normals = source.normals
         self.vis.update_geometry(self.source)
         if self.reset_bounding_box:
             self.vis.reset_view_point(True)
