@@ -71,7 +71,7 @@ class Visualizer:
             self.advance()
 
     def update(self, poll_events=True):
-        source = self._dataset[self.idx]
+        source = self._get_frame(self.idx)
         self._update_geometries(source)
         while poll_events:
             self.vis.poll_events()
@@ -92,6 +92,19 @@ class Visualizer:
         self.pbar.refresh()
 
     # Private Interaface ---------------------------------------------------------------------------
+    def _get_frame(self, idx):
+        # Let's do a bit of duck typing to support eating different monsters
+        dataframe = self._dataset[idx]
+        try:
+            # old KISS-ICP dataframe, spits points, timestamps. We don't care about the last
+            frame, _ = dataframe
+        except:
+            frame = dataframe
+        if not isinstance(frame, self.o3d.geometry.PointCloud):
+            # convert to Open3D::Geometry::PointCloud
+            frame = self.o3d.geometry.PointCloud(self.o3d.utility.Vector3dVector(frame))
+        return frame
+
     def _next_frame(self, vis):
         self.play_crun = False
         self.advance()
