@@ -114,7 +114,7 @@ class Visualizer:
     def _initialize_visualizer(self):
         w_name = self.__class__.__name__
         self.vis.create_window(window_name=w_name, width=1920, height=1080)
-        self.vis.add_geometry(self.source)
+        self.vis.add_geometry(self.source, reset_bounding_box=False)
         self._set_black_background(self.vis)
         self.vis.get_render_option().point_size = 1
         print(
