@@ -79,14 +79,29 @@ class GenericDataset:
 
         first_scan_file = self.scan_files[0]
 
+        tried_libraries = []
+        missing_libraries = []
+        # First with open3d
+        try:
+            import open3d as o3d
+
+            o3d.io.read_point_cloud(first_scan_file)
+            return lambda file: np.asarray(o3d.io.read_point_cloud(file).points, dtype=np.float64)
+        except ModuleNotFoundError:
+            missing_libraries.append("open3d")
+        except:
+            tried_libraries.append("open3d")
+
         # first try trimesh
         try:
             import trimesh
 
             trimesh.load(first_scan_file)
             return lambda file: np.asarray(trimesh.load(file).vertices)
+        except ModuleNotFoundError:
+            missing_libraries.append("trimesh")
         except:
-            pass
+            tried_libraries.append("trimesh")
 
         # then try pyntcloud
         try:
@@ -94,15 +109,23 @@ class GenericDataset:
 
             PyntCloud.from_file(first_scan_file)
             return lambda file: PyntCloud.from_file(file).points[["x", "y", "z"]].to_numpy()
+        except ModuleNotFoundError:
+            missing_libraries.append("pyntcloud")
         except:
-            pass
+            tried_libraries.append("pyntcloud")
 
-        # lastly with open3d
-        try:
-            import open3d as o3d
+        # If reach this point means that none of the librares exist/could read the file
+        if not tried_libraries:
+            print(
+                "No 3D library is insallted in your system. Install one of the following "
+                "to read the pointclouds"
+            )
+            print("\n".join(missing_libraries))
+        else:
+            print("[ERROR] File format not supported")
 
-            o3d.io.read_point_cloud(first_scan_file)
-            return lambda file: np.asarray(o3d.io.read_point_cloud(file).points, dtype=np.float64)
-        except:
-            print("[ERROR], File format not supported")
-            sys.exit(1)
+            print("Tried to load the point cloud with:")
+            print("\n".join(tried_libraries))
+            print("Skipped libraries (not installed):")
+            print("\n".join(missing_libraries))
+        sys.exit(1)
