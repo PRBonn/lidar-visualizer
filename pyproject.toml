@@ -9,18 +9,6 @@ authors = [
   {name = "Ignacio Vizzo", email = "ignaciovizzo@gmail.com"},
 ]
 
-requires-python = ">=3.7, <3.11"
-dependencies = [
-  "natsort",
-  "numpy",
-  "pyntcloud",
-  "tqdm",
-  "trimesh",
-  "open3d>=0.16.0",
-  "ouster-sdk>=0.7.1",
-  "typer[all]>=0.6.0",
-]
-
 classifiers  = [
   "Operating System :: Unix",
   "Operating System :: MacOS",
@@ -37,6 +25,23 @@ classifiers  = [
   "Intended Audience :: Other Audience",
   "Intended Audience :: Science/Research",
   "License :: OSI Approved :: MIT License",
+]
+
+
+requires-python = ">=3.7, <3.11"
+dependencies = [
+  "natsort",
+  "numpy",
+  "tqdm",
+  "open3d>=0.16.0",
+  "typer[all]>=0.6.0",
+]
+
+[project.optional-dependencies]
+all = [
+  "pyntcloud",
+  "trimesh",
+  "ouster-sdk>=0.7.1",
 ]
 
 [project.urls]
