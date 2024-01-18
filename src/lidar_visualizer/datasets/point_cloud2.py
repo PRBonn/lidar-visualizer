@@ -29,10 +29,12 @@
 """
 This file is based on https://github.com/ros2/common_interfaces/blob/4bac182a0a582b5e6b784d9fa9f0dabc1aca4d35/sensor_msgs_py/sensor_msgs_py/point_cloud2.py
 All rights reserved to the original authors: Tim Field and Florian Vahl.
+
+The current implementation is based on the one from the KISS-ICP project, but modified
 """
 
 import sys
-from typing import Iterable, List, Optional, Tuple
+from typing import Iterable, List, Optional
 
 import numpy as np
 
@@ -80,15 +82,12 @@ def read_point_cloud(msg: PointCloud2):
             points_structured["y"],
             points_structured["z"],
         ]
-    )
+    ).astype(np.float64)
     scan = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(points))
     if intensity_field:
         intensity = points_structured[intensity_field].astype(np.float64)
         intensity = intensity / intensity.max()
         scan.colors = o3d.utility.Vector3dVector(CMAP(intensity)[:, :3].reshape(-1, 3))
-
-    scan.remove_duplicated_points()
-    scan.remove_non_finite_points()
     return scan
 
 

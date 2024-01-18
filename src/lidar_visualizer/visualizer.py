@@ -105,7 +105,6 @@ class Visualizer:
     def _update_geometries(self, source):
         self.source.points = source.points
         self.source.colors = source.colors
-        self.source.normals = source.normals
         self.vis.update_geometry(self.source)
         if self.reset_bounding_box:
             self.vis.reset_view_point(True)
