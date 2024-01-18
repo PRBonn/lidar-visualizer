@@ -20,129 +20,61 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import glob
+import os
 from pathlib import Path
 from typing import Optional
 
 import typer
-from kiss_icp.datasets import (
+
+from lidar_visualizer.datasets import (
     available_dataloaders,
     dataset_factory,
     jumpable_dataloaders,
-    sequence_dataloaders,
     supported_file_extensions,
 )
-from kiss_icp.tools.cmd import guess_dataloader, name_callback
-from kiss_icp.tools.visualizer import RegistrationVisualizer
-from tqdm import tqdm
+from lidar_visualizer.visualizer import Visualizer
 
 
 def version_callback(value: bool):
-    from kiss_icp.tools.cmd import version_callback as kiss_icp_version_callback
-
     if value:
         import lidar_visualizer
 
         print(f"Lidar Visualizer Version: {lidar_visualizer.__version__}")
-        return kiss_icp_version_callback(value)
+        raise typer.Exit(0)
 
 
-class Visualizer(RegistrationVisualizer):
-    def __init__(self, dataset, n_scans: int = -1, jump: int = 0):
-        super().__init__()
-        self._dataset = dataset
-        if n_scans == -1:
-            self.n_scans = len(self._dataset)
-            self.start_idx = 0
-            self.stop_idx = self.n_scans
-        else:
-            self.n_scans = min(len(self._dataset) - jump, n_scans)
-            self.start_idx = jump
-            self.stop_idx = self.n_scans + jump
+def guess_dataloader(data: Path, default_dataloader: str):
+    if data.is_file():
+        if data.name == "metadata.yaml":
+            return "rosbag", data.parent  # database is in directory, not in .yml
+        if data.name.split(".")[-1] in "bag":
+            return "rosbag", data
+        if data.name.split(".")[-1] == "pcap":
+            return "ouster", data
+        if data.name.split(".")[-1] == "mcap":
+            return "mcap", data
+    elif data.is_dir():
+        if (data / "metadata.yaml").exists():
+            # a directory with a metadata.yaml must be a ROS2 bagfile
+            return "rosbag", data
+        bagfiles = [Path(path) for path in glob.glob(os.path.join(data, "*.bag"))]
+        if len(bagfiles) > 0:
+            return "rosbag", bagfiles
+    return default_dataloader, data
 
-        self.idx = jump
-        self.pbar = tqdm(total=self.n_scans)
-        self.update_pbar()
 
-    def run(self):
-        while True:
-            self.update()
-            self.advance()
-
-    def update(self, poll_events=True):
-        source = self._get_frame(self.idx)
-        self._update_geometries(source)
-        while poll_events:
-            self.vis.poll_events()
-            self.vis.update_renderer()
-            if self.play_crun:
-                break
-
-    def advance(self):
-        self.idx = self.start_idx if self.idx == self.stop_idx - 1 else self.idx + 1
-        self.update_pbar()
-
-    def rewind(self):
-        self.idx = self.start_idx if self.idx == self.stop_idx - 1 else self.idx - 1
-        self.update_pbar()
-
-    def update_pbar(self):
-        self.pbar.n = self.idx % self.n_scans
-        self.pbar.refresh()
-
-    # Private Interaface ---------------------------------------------------------------------------
-    def _next_frame(self, vis):
-        self.play_crun = False
-        self.advance()
-        self.update(False)
-
-    def _prev_frame(self, vis):
-        self.play_crun = False
-        self.rewind()
-        self.update(False)
-
-    def _get_frame(self, idx):
-        dataframe = self._dataset[idx]
-        try:
-            frame, _ = dataframe
-        except ValueError:
-            frame = dataframe
-        return frame
-
-    def _update_geometries(self, source):
-        self.source.points = self.o3d.utility.Vector3dVector(source)
-        self.vis.update_geometry(self.source)
-        if self.reset_bounding_box:
-            self.vis.reset_view_point(True)
-            self.reset_bounding_box = False
-
-    # GUI controls ---------------------------------------------------------------------------
-    def _initialize_visualizer(self):
-        w_name = self.__class__.__name__
-        self.vis.create_window(window_name=w_name, width=1920, height=1080)
-        self.vis.add_geometry(self.source)
-        self._set_black_background(self.vis)
-        self.vis.get_render_option().point_size = 1
-        print(
-            f"{w_name} initialized. Press:\n"
-            "\t[SPACE] to pause/start\n"
-            "\t  [ESC] to exit\n"
-            "\t    [N] to render next frame\n"
-            "\t    [P] to render prev frame\n"
-            "\t    [W] to toggle a white background\n"
-            "\t    [B] to toggle a black background\n"
-        )
-
-    def _register_key_callbacks(self):
-        self._register_key_callback(["Ā", "Q", "\x1b"], self._quit)
-        self._register_key_callback([" "], self._start_stop)
-        self._register_key_callback(["N"], self._next_frame)
-        self._register_key_callback(["P"], self._prev_frame)
-        self._register_key_callback(["B"], self._set_black_background)
-        self._register_key_callback(["W"], self._set_white_background)
+def name_callback(value: str):
+    if not value:
+        return value
+    dl = available_dataloaders()
+    if value not in dl:
+        raise typer.BadParameter(f"Supported dataloaders are:\n{', '.join(dl)}")
+    return value
 
 
 docstring = f"""
-:kiss: KISS-ICP dataset visualizer :kiss:\n
+:kiss: LiDAR visualizer :kiss:\n
 \b
 [bold green]Examples: [/bold green]
 # Visualize all pointclouds in the given <data-dir> \[{", ".join(supported_file_extensions())}]
@@ -156,12 +88,7 @@ $ lidar_visualizer <path-to-file.mcap>:page_facing_up:
 
 # Visualize [bold]Ouster pcap[/bold] recording (requires ouster-sdk Python package installed)
 $ lidar_visualizer <path-to-ouster.pcap>:page_facing_up: \[--meta <path-to-metadata.json>:page_facing_up:]
-
-# Use a more specific dataloader: {", ".join(available_dataloaders())}
-$ lidar_visualizer --dataloader kitti --sequence 07 <path-to-kitti-root>:open_file_folder:
-
 """
-
 app = typer.Typer(add_completion=False, rich_markup_mode="rich")
 
 
@@ -178,15 +105,7 @@ def lidar_visualizer(
         case_sensitive=False,
         autocompletion=available_dataloaders,
         callback=name_callback,
-        help="[Optional] Use a specific dataloader from those supported by KISS-ICP",
-    ),
-    sequence: Optional[int] = typer.Option(
-        None,
-        "--sequence",
-        "-s",
-        show_default=False,
-        help="[Optional] For some dataloaders, you need to specify a given sequence",
-        rich_help_panel="Additional Options",
+        help="[Optional] Use a specific dataloader from those supported by lidar-visualizer",
     ),
     topic: Optional[str] = typer.Option(
         None,
@@ -224,18 +143,13 @@ def lidar_visualizer(
     version: Optional[bool] = typer.Option(
         None,
         "--version",
-        help="Show the current version of KISS-ICP",
+        help="Show the current version of lidar-visualizer",
         callback=version_callback,
         is_eager=True,
     ),
 ):
     if not dataloader:
         dataloader, data = guess_dataloader(data, default_dataloader="generic")
-
-    # Validate some options
-    if dataloader in sequence_dataloaders() and sequence is None:
-        print('You must specify a sequence "--sequence"')
-        raise typer.Exit(code=1)
 
     if (jump != 0 or n_scans != -1) and dataloader not in jumpable_dataloaders():
         print(f"[WARNING] '{dataloader}' does not support '-jump' or '--n_scans'")
@@ -248,7 +162,6 @@ def lidar_visualizer(
             dataloader=dataloader,
             data_dir=data,
             # Additional options
-            sequence=sequence,
             topic=topic,
             meta=meta,
         ),

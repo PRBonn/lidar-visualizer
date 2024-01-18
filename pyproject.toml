@@ -9,8 +9,6 @@ authors = [
   {name = "Ignacio Vizzo", email = "ignaciovizzo@gmail.com"},
 ]
 
-requires-python = ">=3.7"
-dependencies = [ "kiss-icp>=0.2.9" ]
 classifiers  = [
   "Operating System :: Unix",
   "Operating System :: MacOS",
@@ -27,6 +25,22 @@ classifiers  = [
   "Intended Audience :: Other Audience",
   "Intended Audience :: Science/Research",
   "License :: OSI Approved :: MIT License",
+]
+
+
+requires-python = ">=3.7, <3.11"
+dependencies = [
+  "natsort",
+  "numpy",
+  "tqdm",
+  "typer[all]>=0.6.0",
+]
+
+[project.optional-dependencies]
+all = [
+  "pyntcloud",
+  "trimesh",
+  "ouster-sdk",
 ]
 
 [project.urls]

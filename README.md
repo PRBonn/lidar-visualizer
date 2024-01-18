@@ -6,13 +6,23 @@ A flexible, easy-to-use, LiDAR (or any point cloud) visualizer for Linux, Window
 
 If you also need to obtain poses from your dataset, consider checking out [KISS-ICP](https://github.com/PRBonn/kiss-icp).
 
-## Install
+## Install (\*)
 
 ```sh
 pip install lidar-visualizer
 ```
 
-Next, follow the instructions on how to run the system by typing:
+(\*) This package relies on the power of [Open3D](https://www.open3d.org) but does not list it as a dependency. If you haven't installed `open3d` then `pip install open3d` or check [the official instructions](https://www.open3d.org/docs/release/getting_started.html)
+
+## Optional dependencies
+
+Depending on the [dataloaders](./src/lidar_visualizer/datasets/) you plan to use you might need to install optional dependencies. The tool will prompt which tools is the one you are requesting and is not accessible, but if you want to go for brute force and install all of it just run:
+
+```sh
+pip install lidar-visualizer[all]
+```
+
+## Usage
 
 ```sh
 lidar_visualizer --help
