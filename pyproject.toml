@@ -33,7 +33,6 @@ dependencies = [
   "natsort",
   "numpy",
   "tqdm",
-  "open3d>=0.16.0",
   "typer[all]>=0.6.0",
 ]
 
@@ -41,7 +40,7 @@ dependencies = [
 all = [
   "pyntcloud",
   "trimesh",
-  "ouster-sdk>=0.7.1",
+  "ouster-sdk",
 ]
 
 [project.urls]

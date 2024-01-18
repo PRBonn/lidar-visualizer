@@ -20,26 +20,37 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import importlib
 import os
 from functools import partial
 from typing import Callable, List
 
-import open3d as o3d
 from tqdm import tqdm
 
 
 class Visualizer:
     def __init__(self, dataset, n_scans: int = -1, jump: int = 0):
+        # Open3D is a big monster. This package dependes 100% on it, but each user will need to
+        # figure out how to install it properly
+        try:
+            self.o3d = importlib.import_module("open3d")
+        except ModuleNotFoundError:
+            print(
+                "Open3D is not installed on your system, to fix this either "
+                'run "pip install open3d" '
+                "or check https://www.open3d.org/docs/release/getting_started.html"
+            )
+            exit(1)
         # Initialize GUI controls
         self.block_vis = True
         self.play_crun = False
         self.reset_bounding_box = True
 
         # Create data
-        self.source = o3d.geometry.PointCloud()
+        self.source = self.o3d.geometry.PointCloud()
 
         # Initialize visualizer
-        self.vis = o3d.visualization.VisualizerWithKeyCallback()
+        self.vis = self.o3d.visualization.VisualizerWithKeyCallback()
         self._register_key_callbacks()
         self._initialize_visualizer()
 
@@ -103,7 +114,7 @@ class Visualizer:
         return frame
 
     def _update_geometries(self, source):
-        self.source.points = o3d.utility.Vector3dVector(source)
+        self.source.points = self.o3d.utility.Vector3dVector(source)
         self.vis.update_geometry(self.source)
         if self.reset_bounding_box:
             self.vis.reset_view_point(True)
