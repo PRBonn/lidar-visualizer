@@ -36,7 +36,9 @@ The current implementation is based on the one from the KISS-ICP project, but mo
 import sys
 from typing import Iterable, List, Optional
 
+import matplotlib.cm as cm
 import numpy as np
+import open3d as o3d
 
 try:
     from rosbags.typesys.types import sensor_msgs__msg__PointCloud2 as PointCloud2
@@ -56,14 +58,6 @@ _DATATYPES[PointField.FLOAT32] = np.dtype(np.float32)
 _DATATYPES[PointField.FLOAT64] = np.dtype(np.float64)
 
 DUMMY_FIELD_PREFIX = "unnamed_field"
-
-
-import matplotlib.cm as cm
-
-# WRAP INSIDE CLAS
-import open3d as o3d
-
-CMAP = cm.viridis
 
 
 def read_point_cloud(msg: PointCloud2):
@@ -87,7 +81,7 @@ def read_point_cloud(msg: PointCloud2):
     if intensity_field:
         intensity = points_structured[intensity_field].astype(np.float64)
         intensity = intensity / intensity.max()
-        scan.colors = o3d.utility.Vector3dVector(CMAP(intensity)[:, :3].reshape(-1, 3))
+        scan.colors = o3d.utility.Vector3dVector(cm.viridis(intensity)[:, :3].reshape(-1, 3))
     return scan
 
 
