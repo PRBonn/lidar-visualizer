@@ -85,7 +85,21 @@ class GenericDataset:
         # This is easy, the old KITTI format
         if self.file_extension == "bin":
             print("[WARNING] Reading .bin files, the only format supported is the KITTI format")
-            return lambda file: np.fromfile(file, dtype=np.float32).reshape((-1, 4))[:, :3]
+
+            def read_kitti_scan(file):
+                points_xyzi = (
+                    np.fromfile(file, dtype=np.float32).reshape((-1, 4)).astype(np.float64)
+                )
+                points = points_xyzi[:, 0:3]
+                intensity = points_xyzi[:, -1]
+                scan = self.o3d.geometry.PointCloud()
+                intensity = intensity / intensity.max()
+                colors = self.cmap(intensity)[:, :3].reshape(-1, 3)
+                scan.points = self.o3d.utility.Vector3dVector(points)
+                scan.colors = self.o3d.utility.Vector3dVector(colors)
+                return scan
+
+            return read_kitti_scan
 
         first_scan_file = self.scan_files[0]
         tried_libraries = []
