@@ -20,6 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import importlib
 import os
 import sys
 from pathlib import Path
@@ -32,6 +33,19 @@ from lidar_visualizer.datasets import supported_file_extensions
 
 class GenericDataset:
     def __init__(self, data_dir: Path, *_, **__):
+        try:
+            self.o3d = importlib.import_module("open3d")
+        except ModuleNotFoundError as e:
+            raise ModuleNotFoundError(
+                "Open3D is not installed on your system, to fix this either "
+                'run "pip install open3d" '
+                "or check https://www.open3d.org/docs/release/getting_started.html"
+            ) from e
+        # Intensity stuff
+        import matplotlib.cm as cm
+
+        self.cmap = cm.viridis
+
         # Config stuff
         self.sequence_id = os.path.basename(data_dir)
         self.scans_dir = os.path.join(os.path.realpath(data_dir), "")
@@ -58,41 +72,55 @@ class GenericDataset:
         return len(self.scan_files)
 
     def __getitem__(self, idx):
-        return self.read_point_cloud(self.scan_files[idx])
-
-    def read_point_cloud(self, file_path: str):
-        points = self._read_point_cloud(file_path)
-        return points.astype(np.float64)
+        return self._read_point_cloud(self.scan_files[idx])
 
     def _get_point_cloud_reader(self):
         """Attempt to guess with try/catch blocks which is the best point cloud reader to use for
         the given dataset folder. Supported readers so far are:
             - np.fromfile
+            - open3d
             - trimesh.load
             - PyntCloud
-            - open3d[optional]
         """
         # This is easy, the old KITTI format
         if self.file_extension == "bin":
             print("[WARNING] Reading .bin files, the only format supported is the KITTI format")
-            return lambda file: np.fromfile(file, dtype=np.float32).reshape((-1, 4))[:, :3]
+
+            def read_kitti_scan(file):
+                points_xyzi = (
+                    np.fromfile(file, dtype=np.float32).reshape((-1, 4)).astype(np.float64)
+                )
+                points = points_xyzi[:, 0:3]
+                intensity = points_xyzi[:, -1]
+                scan = self.o3d.geometry.PointCloud()
+                intensity = intensity / intensity.max()
+                colors = self.cmap(intensity)[:, :3].reshape(-1, 3)
+                scan.points = self.o3d.utility.Vector3dVector(points)
+                scan.colors = self.o3d.utility.Vector3dVector(colors)
+                return scan
+
+            return read_kitti_scan
 
         first_scan_file = self.scan_files[0]
-
         tried_libraries = []
         missing_libraries = []
         # First with open3d
         try:
-            import open3d as o3d
+            self.o3d.t.io.read_point_cloud(first_scan_file)
 
-            o3d.io.read_point_cloud(first_scan_file)
-            return lambda file: np.asarray(o3d.io.read_point_cloud(file).points, dtype=np.float64)
+            def read_scan_with_intensities(file):
+                scan = self.o3d.t.io.read_point_cloud(file)
+                intensity = scan.point.intensity.numpy()
+                intensity = intensity / intensity.max()
+                scan.point.colors = self.cmap(intensity)[:, :, :3].reshape(-1, 3)
+                return scan.to_legacy()
+
+            return read_scan_with_intensities
         except ModuleNotFoundError:
             missing_libraries.append("open3d")
         except:
             tried_libraries.append("open3d")
 
-        # first try trimesh
         try:
             import trimesh
 
@@ -103,7 +131,6 @@ class GenericDataset:
         except:
             tried_libraries.append("trimesh")
 
-        # then try pyntcloud
         try:
             from pyntcloud import PyntCloud
 

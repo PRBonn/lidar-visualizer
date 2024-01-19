@@ -23,10 +23,9 @@
 # SOFTWARE.
 
 import glob
+import importlib
 import os
 from typing import Optional
-
-import numpy as np
 
 
 def find_metadata_json(pcap_file: str) -> str:
@@ -85,13 +84,25 @@ class OusterDataloader:
         try:
             import ouster.pcap as pcap
             from ouster import client
+            from ouster.client import _utils
+            from ouster.sdk.examples.colormaps import colorize
         except ModuleNotFoundError as e:
             raise ModuleNotFoundError(
                 f'ouster-sdk is not installed on your system, run "pip install ouster-sdk"'
             ) from e
+        try:
+            self.o3d = importlib.import_module("open3d")
+        except ModuleNotFoundError as e:
+            raise ModuleNotFoundError(
+                "Open3D is not installed on your system, to fix this either "
+                'run "pip install open3d" '
+                "or check https://www.open3d.org/docs/release/getting_started.html"
+            ) from e
 
         # since we import ouster-sdk's client module locally, we keep it locally as well
         self._client = client
+        self._colorize = colorize
+        self._utils = _utils
 
         assert os.path.isfile(data_dir), "Ouster pcap dataloader expects an existing PCAP file"
 
@@ -121,13 +132,29 @@ class OusterDataloader:
         self._scans_num = sum((1 for _ in client.Scans(self._source)))
         print(f"Ouster pcap total scans number:  {self._scans_num}")
 
-        # frame timestamps array
-        self._timestamps = np.linspace(0, self._scans_num, self._scans_num, endpoint=False)
-
         # start Scans iterator for consumption in __getitem__
         self._source = pcap.Pcap(self._pcap_file, self._info)
         self._scans_iter = iter(client.Scans(self._source))
         self._next_idx = 0
+
+    def get_color_image(self, scan):
+        """This function was taken from the Ouster SDK. All rights reserved to Ouster, Inc
+
+        https://github.com/ouster-lidar/ouster_example/blob/master/python/src/ouster/sdk/examples/open3d.py
+        """
+        fields = list(scan.fields)
+        aes = {}
+        for field_ind, field in enumerate(fields):
+            if field in (self._client.ChanField.SIGNAL, self._client.ChanField.SIGNAL2):
+                aes[field_ind] = self._utils.AutoExposure(0.02, 0.1, 3)
+            else:
+                aes[field_ind] = self._utils.AutoExposure()
+        field_ind = 2
+
+        # Obtain reflectivity for colorizing the cloud
+        key = scan.field(fields[field_ind]).astype(float)
+        aes[field_ind](key)
+        return self._colorize(key)
 
     def __getitem__(self, idx):
         # we assume that users always reads sequentially and do not
@@ -139,19 +166,18 @@ class OusterDataloader:
         scan = next(self._scans_iter)
         self._next_idx += 1
 
-        self._timestamps[self._next_idx - 1] = 1e-9 * scan.timestamp[0]
-
-        timestamps = np.tile(np.linspace(0, 1.0, scan.w, endpoint=False), (scan.h, 1))
-
         # filtering our zero returns makes it substantially faster for kiss-icp
         sel_flag = scan.field(self._client.ChanField.RANGE) != 0
+
+        # Extract XYZ and Intensity channels form scan
         xyz = self._xyz_lut(scan)[sel_flag]
-        timestamps = timestamps[sel_flag]
+        ref = self.get_color_image(scan)[sel_flag]
 
-        return xyz, timestamps
-
-    def get_frames_timestamps(self):
-        return self._timestamps
+        # Build Open3D object
+        cloud = self.o3d.geometry.PointCloud()
+        cloud.points = self.o3d.utility.Vector3dVector(xyz.reshape((-1, 3)))
+        cloud.colors = self.o3d.utility.Vector3dVector(ref.reshape((-1, 3)))
+        return cloud
 
     def __len__(self):
         return self._scans_num

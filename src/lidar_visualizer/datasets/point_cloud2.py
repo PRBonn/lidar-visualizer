@@ -29,12 +29,16 @@
 """
 This file is based on https://github.com/ros2/common_interfaces/blob/4bac182a0a582b5e6b784d9fa9f0dabc1aca4d35/sensor_msgs_py/sensor_msgs_py/point_cloud2.py
 All rights reserved to the original authors: Tim Field and Florian Vahl.
+
+The current implementation is based on the one from the KISS-ICP project, but modified
 """
 
 import sys
-from typing import Iterable, List, Optional, Tuple
+from typing import Iterable, List, Optional
 
+import matplotlib.cm as cm
 import numpy as np
+import open3d as o3d
 
 try:
     from rosbags.typesys.types import sensor_msgs__msg__PointCloud2 as PointCloud2
@@ -56,38 +60,29 @@ _DATATYPES[PointField.FLOAT64] = np.dtype(np.float64)
 DUMMY_FIELD_PREFIX = "unnamed_field"
 
 
-def read_point_cloud(msg: PointCloud2) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Extract poitns and timestamps from a PointCloud2 message.
-
-    :return: Tuple of [points, timestamps]
-        points: array of x, y z points, shape: (N, 3)
-        timestamps: array of per-pixel timestamps, shape: (N,)
-    """
+def read_point_cloud(msg: PointCloud2):
     field_names = ["x", "y", "z"]
-    t_field = None
+    intensity_field = None
     for field in msg.fields:
-        if field.name in ["t", "timestamp", "time"]:
-            t_field = field.name
-            field_names.append(t_field)
+        if field.name in ["intensity"]:
+            intensity_field = field.name
+            field_names.append(intensity_field)
             break
 
     points_structured = read_points(msg, field_names=field_names)
     points = np.column_stack(
-        [points_structured["x"], points_structured["y"], points_structured["z"]]
-    )
-
-    # Remove nan if any
-    points = points[~np.any(np.isnan(points), axis=1)]
-
-    if t_field:
-        timestamps = points_structured[t_field].astype(np.float64)
-        min_timestamp = np.min(timestamps)
-        max_timestamp = np.max(timestamps)
-        timestamps = (timestamps - min_timestamp) / (max_timestamp - min_timestamp)
-    else:
-        timestamps = np.ones(points.shape[0])
-    return points.astype(np.float64), timestamps
+        [
+            points_structured["x"],
+            points_structured["y"],
+            points_structured["z"],
+        ]
+    ).astype(np.float64)
+    scan = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(points))
+    if intensity_field:
+        intensity = points_structured[intensity_field].astype(np.float64)
+        intensity = intensity / intensity.max()
+        scan.colors = o3d.utility.Vector3dVector(cm.viridis(intensity)[:, :3].reshape(-1, 3))
+    return scan
 
 
 def read_points(
