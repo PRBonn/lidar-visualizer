@@ -1,7 +1,7 @@
 [project]
 name = "lidar_visualizer"
 description = "A LiDAR visualization tool for all your datasets"
-version = "0.1.0"
+version = "0.1.1"
 readme = "README.md"
 license = {file = "LICENSE"}
 keywords = ["LiDAR", "Robotics", "Visualization"]
