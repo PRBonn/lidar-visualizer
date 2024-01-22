@@ -1,7 +1,7 @@
 [project]
 name = "lidar_visualizer"
 description = "A LiDAR visualization tool for all your datasets"
-version = "0.1.1"
+version = "0.1.2"
 readme = "README.md"
 license = {file = "LICENSE"}
 keywords = ["LiDAR", "Robotics", "Visualization"]
@@ -28,7 +28,7 @@ classifiers  = [
 ]
 
 
-requires-python = ">=3.7, <=3.11"
+requires-python = ">=3.7"
 dependencies = [
   "natsort",
   "numpy",
