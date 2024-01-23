@@ -155,6 +155,10 @@ class Visualizer:
             "\t    [B] to toggle a black background\n"
         )
 
+    def _render_to_png(self, vis):
+        print(f"Saving screenshot to {self.current_filename}.png")
+        vis.capture_screen_image(f"{self.current_filename}.png")
+
     def _register_key_callback(self, keys: List, callback: Callable):
         for key in keys:
             self.vis.register_key_callback(ord(str(key)), partial(callback))
@@ -164,6 +168,7 @@ class Visualizer:
         self._register_key_callback([" "], self._start_stop)
         self._register_key_callback(["N"], self._next_frame)
         self._register_key_callback(["P"], self._prev_frame)
+        self._register_key_callback(["S"], self._render_to_png)
         self._register_key_callback(["B"], self._set_black_background)
         self._register_key_callback(["W"], self._set_white_background)
 
