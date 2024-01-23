@@ -91,7 +91,7 @@ class Visualizer:
 
     def update_pbar(self):
         self.pbar.n = self.idx % self.n_scans
-        self.pbar.set_description_str(self.current_filename)
+        self.pbar.set_description_str(self._get_current_filename(self.pbar.n))
         self.pbar.refresh()
 
     # Private Interaface ---------------------------------------------------------------------------
