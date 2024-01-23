@@ -156,8 +156,9 @@ class Visualizer:
         )
 
     def _render_to_png(self, vis):
-        print(f"Saving screenshot to {self.current_filename}.png")
-        vis.capture_screen_image(f"{self.current_filename}.png")
+        filename = self.current_filename if self.current_filename else str(self.idx).zfill(6)
+        print(f"Saving screenshot to {filename}.png")
+        vis.capture_screen_image(f"{filename}.png")
 
     def _register_key_callback(self, keys: List, callback: Callable):
         for key in keys:
