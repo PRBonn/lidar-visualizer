@@ -61,7 +61,9 @@ class Visualizer:
             self.start_idx = jump
             self.stop_idx = self.n_scans + jump
 
+        # Initialize progress bar data
         self.idx = jump
+        self.current_filename = self._get_current_filename(self.idx)
         self.pbar = tqdm(total=self.n_scans, dynamic_ncols=True)
         self.update_pbar()
 
@@ -71,8 +73,8 @@ class Visualizer:
             self.advance()
 
     def update(self, poll_events=True):
-        source = self._get_frame(self.idx)
-        self._update_geometries(source)
+        self.current_filename = self._get_current_filename(self.idx)
+        self._update_geometries(self._get_frame(self.idx))
         while poll_events:
             self.vis.poll_events()
             self.vis.update_renderer()
@@ -89,12 +91,25 @@ class Visualizer:
 
     def update_pbar(self):
         self.pbar.n = self.idx % self.n_scans
+        self.pbar.set_description_str(self.current_filename)
         self.pbar.refresh()
 
     # Private Interaface ---------------------------------------------------------------------------
+    def _get_current_filename(self, idx):
+        # Try to fetch the current filename
+        try:
+            filename = self._dataset.scan_files[idx]
+            return os.path.splitext(os.path.basename(filename))[0]
+        except:
+            return None
+
+        # Let's do a bit of duck typing to support eating different monsters
+        dataframe = self._dataset[idx]
+
     def _get_frame(self, idx):
         # Let's do a bit of duck typing to support eating different monsters
         dataframe = self._dataset[idx]
+
         try:
             # old KISS-ICP dataframe, spits points, timestamps. We don't care about the last
             frame, _ = dataframe
@@ -140,6 +155,11 @@ class Visualizer:
             "\t    [B] to toggle a black background\n"
         )
 
+    def _render_to_png(self, vis):
+        filename = self.current_filename if self.current_filename else str(self.idx).zfill(6)
+        print(f"Saving screenshot to {filename}.png")
+        vis.capture_screen_image(f"{filename}.png")
+
     def _register_key_callback(self, keys: List, callback: Callable):
         for key in keys:
             self.vis.register_key_callback(ord(str(key)), partial(callback))
@@ -149,6 +169,7 @@ class Visualizer:
         self._register_key_callback([" "], self._start_stop)
         self._register_key_callback(["N"], self._next_frame)
         self._register_key_callback(["P"], self._prev_frame)
+        self._register_key_callback(["S"], self._render_to_png)
         self._register_key_callback(["B"], self._set_black_background)
         self._register_key_callback(["W"], self._set_white_background)
 
