@@ -60,6 +60,7 @@ class HeLiPRLivoxDataset:
         if self.file_extension not in supported_file_extensions():
             raise ValueError(f"Supported formats are: {supported_file_extensions()}")
 
+        self.intensity_channel = None
         # Obtain the pointcloud reader for the given data folder
         if self.sequence_id.find("avia"):
             self.dtype = np.dtype(
@@ -73,6 +74,7 @@ class HeLiPRLivoxDataset:
                     ("offset_time", np.uint32),
                 ]
             )
+
         elif self.sequence_id.find("aeva"):
             self.dtype = np.dtype(
                 [
@@ -86,6 +88,8 @@ class HeLiPRLivoxDataset:
                     ("intensity", np.float32),
                 ]
             )
+            self.intensity_channel = 7
+
         elif self.sequence_id.find("ouster"):
             self.dtype = np.dtype(
                 [
@@ -99,6 +103,8 @@ class HeLiPRLivoxDataset:
                     ("ambient", np.float16),
                 ]
             )
+            self.intensity_channel = 3
+
         elif self.sequence_id.find("velodyne"):
             self.dtype = np.dtype(
                 [
@@ -110,6 +116,8 @@ class HeLiPRLivoxDataset:
                     ("time", np.float32),
                 ]
             )
+            self.intensity_channel = 3
+
         else:
             print("[ERROR] Unsupported LiDAR Type")
             sys.exit()
@@ -121,12 +129,28 @@ class HeLiPRLivoxDataset:
         return self.read_point_cloud(self.scan_files[idx])
 
     def read_point_cloud(self, file_path: str):
-        points = np.stack(
-            [
-                [line[0], line[1], line[2]]
-                for line in np.fromfile(file_path, dtype=self.dtype).tolist()
-            ]
-        )
         scan = self.o3d.geometry.PointCloud()
-        scan.points = self.o3d.utility.Vector3dVector(points.astype(np.float64))
+        if self.intensity_channel is not None:
+            points_xyzi = np.stack(
+                [
+                    [line[0], line[1], line[2], line[self.intensity_channel]]
+                    for line in np.fromfile(file_path, dtype=self.dtype).tolist()
+                ]
+            )
+            points = points_xyzi[:, 0:3]
+            intensity = points_xyzi[:, -1]
+            intensity = intensity / intensity.max()
+            colors = self.cmap(intensity)[:, :3].reshape(-1, 3)
+            scan.points = self.o3d.utility.Vector3dVector(points)
+            scan.colors = self.o3d.utility.Vector3dVector(colors)
+
+        else:
+            points = np.stack(
+                [
+                    [line[0], line[1], line[2]]
+                    for line in np.fromfile(file_path, dtype=self.dtype).tolist()
+                ]
+            )
+            scan.points = self.o3d.utility.Vector3dVector(points)
+
         return scan
