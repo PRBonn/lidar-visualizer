@@ -146,7 +146,7 @@ class HeLiPRLivoxDataset:
             )
             points = points_xyzi[:, 0:3]
             intensity = points_xyzi[:, -1]
-            intensity = intensity / intensity.max()
+            intensity = (intensity - intensity.min()) / (intensity.max() - intensity.min())
             colors = self.cmap(intensity)[:, :3].reshape(-1, 3)
             scan.points = self.o3d.utility.Vector3dVector(points)
             scan.colors = self.o3d.utility.Vector3dVector(colors)
