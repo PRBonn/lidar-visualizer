@@ -31,7 +31,7 @@ import numpy as np
 from lidar_visualizer.datasets import supported_file_extensions
 
 
-class HeLiPRLivoxDataset:
+class HeLiPRDataset:
     def __init__(self, data_dir: Path, *_, **__):
         try:
             self.o3d = importlib.import_module("open3d")
