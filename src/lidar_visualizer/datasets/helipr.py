@@ -64,7 +64,7 @@ class HeLiPRDataset:
             raise ValueError(f"Supported formats are: {supported_file_extensions()}")
 
         # Obtain the pointcloud reader for the given data folder
-        if self.sequence_id.lower() == "avia":
+        if self.sequence_id == "Avia":
             self.fields = [
                 ("x", np.float32),
                 ("y", np.float32),
@@ -75,7 +75,7 @@ class HeLiPRDataset:
                 ("offset_time", np.uint32),
             ]
 
-        elif self.sequence_id.lower() == "aeva":
+        elif self.sequence_id == "Aeva":
             self.fields = [
                 ("x", np.float32),
                 ("y", np.float32),
@@ -87,7 +87,7 @@ class HeLiPRDataset:
                 ("intensity", np.float32),
             ]
 
-        elif self.sequence_id.lower() == "ouster":
+        elif self.sequence_id == "Ouster":
             self.fields = [
                 ("x", np.float32),
                 ("y", np.float32),
@@ -99,7 +99,7 @@ class HeLiPRDataset:
                 ("ambient", np.uint16),
             ]
 
-        elif self.sequence_id.lower() == "velodyne":
+        elif self.sequence_id == "Velodyne":
             self.fields = [
                 ("x", np.float32),
                 ("y", np.float32),
@@ -130,7 +130,7 @@ class HeLiPRDataset:
         dtype = np.dtype(self.fields)
 
         # Special case, see https://github.com/minwoo0611/HeLiPR-File-Player/blob/e8d95e390454ece1415ae9deb51515f63730c10a/src/ROSThread.cpp#L632
-        if self.sequence_id.lower() == "aeva" and int(Path(file_path).stem) <= 1691936557946849179:
+        if self.sequence_id == "Aeva" and int(Path(file_path).stem) <= 1691936557946849179:
             intensity_channel = None
             dtype = np.dtype(
                 [(name, np_type) for name, np_type in self.fields if name != "intensity"]
