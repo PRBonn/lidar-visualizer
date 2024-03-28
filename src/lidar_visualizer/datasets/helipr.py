@@ -27,6 +27,7 @@ from pathlib import Path
 
 import natsort
 import numpy as np
+import struct
 
 from lidar_visualizer.datasets import supported_file_extensions
 
@@ -64,51 +65,23 @@ class HeLiPRDataset:
             raise ValueError(f"Supported formats are: {supported_file_extensions()}")
 
         # Obtain the pointcloud reader for the given data folder
-        if self.sequence_id.lower() == "avia":
-            self.fields = [
-                ("x", np.float32),
-                ("y", np.float32),
-                ("z", np.float32),
-                ("reflectivity", np.uint8),
-                ("tag", np.uint8),
-                ("line", np.uint8),
-                ("offset_time", np.uint32),
-            ]
-
-        elif self.sequence_id.lower() == "aeva":
-            self.fields = [
-                ("x", np.float32),
-                ("y", np.float32),
-                ("z", np.float32),
-                ("reflectivity", np.float32),
-                ("velocity", np.float32),
-                ("time_offset_ns", np.int32),
-                ("line_index", np.uint8),
-                ("intensity", np.float32),
-            ]
-
-        elif self.sequence_id.lower() == "ouster":
-            self.fields = [
-                ("x", np.float32),
-                ("y", np.float32),
-                ("z", np.float32),
-                ("intensity", np.float32),
-                ("t", np.uint32),
-                ("reflectivity", np.uint16),
-                ("ring", np.uint16),
-                ("ambient", np.uint16),
-            ]
-
-        elif self.sequence_id.lower() == "velodyne":
-            self.fields = [
-                ("x", np.float32),
-                ("y", np.float32),
-                ("z", np.float32),
-                ("intensity", np.float32),
-                ("ring", np.uint16),
-                ("time", np.float32),
-            ]
-
+        if self.sequence_id == "Avia":
+            self.format_string = "fffBBBL"
+            self.index_intensity = None
+            self.index_time = 6
+        elif self.sequence_id == "Aeva":
+            self.format_string = "ffffflBf"
+            self.format_string_no_intensity = "ffffflB"
+            self.index_intensity = 7
+            self.index_time = 5
+        elif self.sequence_id == "Ouster":
+            self.format_string = "ffffIHHH"
+            self.index_intensity = 3
+            self.index_time = 4
+        elif self.sequence_id == "Velodyne":
+            self.format_string = "ffffHf"
+            self.index_intensity = 3
+            self.index_time = 5
         else:
             print("[ERROR] Unsupported LiDAR Type")
             sys.exit()
@@ -117,47 +90,37 @@ class HeLiPRDataset:
         return len(self.scan_files)
 
     def __getitem__(self, idx):
-        return self.read_point_cloud(idx)
+        data = self.get_data(idx)
+        return self.read_point_cloud(data)
 
-    def get_intensity_channel(self):
-        matches = [index for index, (name, _) in enumerate(self.fields) if name == "intensity"]
-        return matches[0] if len(matches) > 0 else None
-
-    def read_point_cloud(self, idx: int):
+    def get_data(self, idx: int):
         file_path = self.scan_files[idx]
-
-        intensity_channel = self.get_intensity_channel()
-        dtype = np.dtype(self.fields)
+        list_lines = []
 
         # Special case, see https://github.com/minwoo0611/HeLiPR-File-Player/blob/e8d95e390454ece1415ae9deb51515f63730c10a/src/ROSThread.cpp#L632
-        if self.sequence_id.lower() == "aeva" and int(Path(file_path).stem) <= 1691936557946849179:
-            intensity_channel = None
-            dtype = np.dtype(
-                [(name, np_type) for name, np_type in self.fields if name != "intensity"]
-            )
+        if self.sequence_id == "Aeva" and int(Path(file_path).stem) <= 1691936557946849179:
+            self.index_intensity = None
+            format_string = self.format_string_no_intensity
+        else:
+            format_string = self.format_string
 
+        chunk_size = struct.calcsize(f"={format_string}")
+        with open(file_path, "rb") as f:
+            binary = f.read()
+            offset = 0
+            while offset < len(binary):
+                list_lines.append(struct.unpack_from(f"={format_string}", binary, offset))
+                offset += chunk_size
+        data = np.stack(list_lines)
+        return data
+
+    def read_point_cloud(self, data: np.ndarray):
+        points = data[:, :3]
         scan = self.o3d.geometry.PointCloud()
-        if intensity_channel is not None:
-            points_xyzi = np.stack(
-                [
-                    [line[0], line[1], line[2], line[intensity_channel]]
-                    for line in np.fromfile(file_path, dtype=dtype).tolist()
-                ]
-            )
-            points = points_xyzi[:, 0:3]
-            intensity = points_xyzi[:, -1]
+        scan.points = self.o3d.utility.Vector3dVector(points)
+        if self.index_intensity is not None:
+            intensity = data[:, self.index_intensity]
             intensity = (intensity - intensity.min()) / (intensity.max() - intensity.min())
             colors = self.cmap(intensity)[:, :3].reshape(-1, 3)
-            scan.points = self.o3d.utility.Vector3dVector(points)
             scan.colors = self.o3d.utility.Vector3dVector(colors)
-
-        else:
-            points = np.stack(
-                [
-                    [line[0], line[1], line[2]]
-                    for line in np.fromfile(file_path, dtype=dtype).tolist()
-                ]
-            )
-            scan.points = self.o3d.utility.Vector3dVector(points)
-
         return scan
