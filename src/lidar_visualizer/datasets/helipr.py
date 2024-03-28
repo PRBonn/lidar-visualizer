@@ -68,20 +68,16 @@ class HeLiPRDataset:
         if self.sequence_id == "Avia":
             self.format_string = "fffBBBL"
             self.index_intensity = None
-            self.index_time = 6
         elif self.sequence_id == "Aeva":
             self.format_string = "ffffflBf"
             self.format_string_no_intensity = "ffffflB"
             self.index_intensity = 7
-            self.index_time = 5
         elif self.sequence_id == "Ouster":
             self.format_string = "ffffIHHH"
             self.index_intensity = 3
-            self.index_time = 4
         elif self.sequence_id == "Velodyne":
             self.format_string = "ffffHf"
             self.index_intensity = 3
-            self.index_time = 5
         else:
             print("[ERROR] Unsupported LiDAR Type")
             sys.exit()
@@ -90,8 +86,7 @@ class HeLiPRDataset:
         return len(self.scan_files)
 
     def __getitem__(self, idx):
-        data = self.get_data(idx)
-        return self.read_point_cloud(data)
+        return self.read_point_cloud(idx)
 
     def get_data(self, idx: int):
         file_path = self.scan_files[idx]
@@ -114,7 +109,8 @@ class HeLiPRDataset:
         data = np.stack(list_lines)
         return data
 
-    def read_point_cloud(self, data: np.ndarray):
+    def read_point_cloud(self, idx: int):
+        data = self.get_data(idx)
         points = data[:, :3]
         scan = self.o3d.geometry.PointCloud()
         scan.points = self.o3d.utility.Vector3dVector(points)
