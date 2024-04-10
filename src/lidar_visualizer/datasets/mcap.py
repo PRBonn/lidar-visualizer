@@ -76,12 +76,15 @@ class McapDataloader:
             schema.id
             for schema in self.summary.schemas.values()
             if schema.name == "sensor_msgs/msg/PointCloud2"
-        ][0]
+        ]
+        if len(schema_id) == 0:
+            print("[ERROR] Your dataset does not contain any sensor_msgs/msg/PointCloud2 topic")
+            sys.exit(1)
 
         point_cloud_topics = [
             channel.topic
             for channel in self.summary.channels.values()
-            if channel.schema_id == schema_id
+            if channel.schema_id == schema_id[0]
         ]
 
         def print_available_topics_and_exit():
@@ -107,7 +110,5 @@ class McapDataloader:
             )
             print_available_topics_and_exit()
 
-        if len(point_cloud_topics) == 0:
-            print("[ERROR] Your dataset does not contain any sensor_msgs/msg/PointCloud2 topic")
         if len(point_cloud_topics) == 1:
             return point_cloud_topics[0]
