@@ -111,10 +111,10 @@ class GenericDataset:
             def read_scan_with_intensities(file):
                 scan = self.o3d.t.io.read_point_cloud(file)
 
-                if hasattr(scan, "point.colors"):
+                if "colors" in dir(scan.point):
                     return scan.to_legacy()
 
-                if hasattr(scan, "point.intensity"):
+                if "intensity" in dir(scan.point):
                     intensity = scan.point.intensity.numpy()
                     intensity = intensity / intensity.max()
                     scan.point.colors = self.cmap(intensity)[:, :, :3].reshape(-1, 3)
