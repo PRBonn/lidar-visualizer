@@ -92,12 +92,9 @@ class GenericDataset:
                 )
                 points = points_xyzi[:, 0:3]
                 intensity = points_xyzi[:, -1]
-                scan = self.o3d.geometry.PointCloud()
                 intensity = intensity / intensity.max()
                 colors = self.cmap(intensity)[:, :3].reshape(-1, 3)
-                scan.points = self.o3d.utility.Vector3dVector(points)
-                scan.colors = self.o3d.utility.Vector3dVector(colors)
-                return scan
+                return points, colors
 
             return read_kitti_scan
 
@@ -112,15 +109,18 @@ class GenericDataset:
                 scan = self.o3d.t.io.read_point_cloud(file)
 
                 if "colors" in dir(scan.point):
-                    return scan.to_legacy()
+                    scan = scan.to_legacy()
+                    return np.asarray(scan.points), np.asarray(scan.colors)
 
                 if "intensity" in dir(scan.point):
                     intensity = scan.point.intensity.numpy()
                     intensity = intensity / intensity.max()
-                    scan.point.colors = self.cmap(intensity)[:, :, :3].reshape(-1, 3)
+                    colors = self.cmap(intensity)[:, :, :3].reshape(-1, 3)
+                    return np.asarray(scan.points), scan.colors
 
                 # else
-                return scan.to_legacy()
+                scan = scan.to_legacy()
+                return np.asarray(scan.points), np.asarray(scan.colors)
 
             return read_scan_with_intensities
         except ModuleNotFoundError:
