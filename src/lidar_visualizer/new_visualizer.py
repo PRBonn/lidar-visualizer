@@ -85,7 +85,7 @@ class Visualizer:
         self.idx = self.start_idx if self.idx == self.stop_idx - 1 else self.idx + 1
 
     def rewind(self):
-        self.idx = self.start_idx if self.idx == self.stop_idx else self.idx - 1
+        self.idx = self.stop_idx - 1 if self.idx == self.start_idx else self.idx - 1
 
     # Private Interface ---------------------------------------------------------------------------
     def _initialize_visualizer(self):
