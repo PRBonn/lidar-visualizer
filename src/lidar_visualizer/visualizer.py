@@ -145,7 +145,7 @@ class Visualizer:
                 if self._random_accessible_dataset:
                     self._gui.SameLine()
                     self._previous_frame_callback()
-            self._gui.Separator()
+        self._gui.Separator()
         self._progress_bar_callback()
         if not self._random_accessible_dataset:
             self._gui.Separator()

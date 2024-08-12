@@ -20,7 +20,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import importlib
 import os
 import struct
 import sys
@@ -34,14 +33,6 @@ from lidar_visualizer.datasets import supported_file_extensions
 
 class HeLiPRDataset:
     def __init__(self, data_dir: Path, *_, **__):
-        try:
-            self.o3d = importlib.import_module("open3d")
-        except ModuleNotFoundError as e:
-            raise ModuleNotFoundError(
-                "Open3D is not installed on your system, to fix this either "
-                'run "pip install open3d" '
-                "or check https://www.open3d.org/docs/release/getting_started.html"
-            ) from e
         # Intensity stuff
         import matplotlib.cm as cm
 
@@ -112,11 +103,9 @@ class HeLiPRDataset:
     def read_point_cloud(self, idx: int):
         data = self.get_data(idx)
         points = data[:, :3]
-        scan = self.o3d.geometry.PointCloud()
-        scan.points = self.o3d.utility.Vector3dVector(points)
+        colors = None
         if self.intensity_channel is not None:
             intensity = data[:, self.intensity_channel]
             intensity = (intensity - intensity.min()) / (intensity.max() - intensity.min())
             colors = self.cmap(intensity)[:, :3].reshape(-1, 3)
-            scan.colors = self.o3d.utility.Vector3dVector(colors)
-        return scan
+        return points, colors
