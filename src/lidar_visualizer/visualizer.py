@@ -58,7 +58,7 @@ class Visualizer:
         self._random_accessible_dataset = random_accessible_dataset
         self.start_idx = min(jump, len(self._dataset) - 1) if self._random_accessible_dataset else 0
         self.n_scans = len(self._dataset) if n_scans == -1 else min(len(self._dataset), n_scans)
-        self.stop_idx = min(len(self._dataset), n_scans + self.start_idx)
+        self.stop_idx = min(len(self._dataset), self.n_scans + self.start_idx)
         self.idx = self.start_idx
         self.current_filename = self._get_current_filename(self.idx)
         self.end_reached = False
@@ -129,6 +129,7 @@ class Visualizer:
 
     # GUI Callbacks ---------------------------------------------------------------------------
     def _main_gui_callback(self):
+        self._gui.TextUnformatted("Controls:")
         if not self.end_reached:
             self._start_pause_callback()
             if not self._play_mode:
@@ -137,8 +138,11 @@ class Visualizer:
                 if self._random_accessible_dataset:
                     self._gui.SameLine()
                     self._previous_frame_callback()
-        self._gui.Separator()
         self._progress_bar_callback()
+        self._gui.Separator()
+        self._gui.TextUnformatted("Scene Options:")
+        self._background_color_callback()
+        self._points_controlles_callback()
         if not self._random_accessible_dataset:
             self._gui.Separator()
             self._information_callback()
@@ -159,6 +163,31 @@ class Visualizer:
         if self._gui.Button(PREVIOUS_FRAME_BUTTON) or self._gui.IsKeyPressed(self._gui.ImGuiKey_P):
             self.rewind()
             self._update_visualized_frame()
+
+    def _points_controlles_callback(self):
+        step = 0.03
+        v_min = 0.01
+        v_max = 0.6
+        key_changed = False
+        if self._gui.IsKeyPressed(self._gui.ImGuiKey_Minus):
+            self._frame_size = max(v_min, self._frame_size - step)
+            key_changed = True
+        if self._gui.IsKeyPressed(self._gui.ImGuiKey_Equal):
+            self._frame_size = min(v_max, self._frame_size + step)
+            key_changed = True
+        changed, self._frame_size = self._gui.SliderFloat(
+            "Points Size", self._frame_size, v_min=v_min, v_max=v_max
+        )
+        if changed or key_changed:
+            self._ps.get_point_cloud("current_frame").set_radius(self._frame_size, relative=False)
+
+    def _background_color_callback(self):
+        changed, self._background_color = self._gui.ColorEdit3(
+            "Background Color",
+            self._background_color,
+        )
+        if changed:
+            self._ps.set_background_color(self._background_color)
 
     def _progress_bar_callback(self):
         changed, idx = self._gui.SliderInt(
