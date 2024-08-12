@@ -22,7 +22,6 @@
 # SOFTWARE.
 import os
 import importlib
-import numpy as np
 
 # Button names
 START_BUTTON = " START\n[SPACE]"
@@ -69,8 +68,6 @@ class Visualizer:
 
         # Initialize visualizer
         self._initialize_visualizer()
-
-        # TODO: initialize bar
 
     def run(self):
         while True:
@@ -146,6 +143,8 @@ class Visualizer:
             self._gui.SameLine()
             self._previous_frame_callback()
         self._gui.Separator()
+        self._progress_bar_callback()
+        self._gui.Separator()
         self._quit_callback()
 
     def _start_pause_callback(self):
@@ -161,6 +160,13 @@ class Visualizer:
     def _previous_frame_callback(self):
         if self._gui.Button(PREVIOUS_FRAME_BUTTON) or self._gui.IsKeyPressed(self._gui.ImGuiKey_P):
             self.rewind()
+            self._update_visualized_frame()
+
+    def _progress_bar_callback(self):
+        changed, self.idx = self._gui.SliderInt(
+            "Progress Bar", self.idx, v_min=self.start_idx, v_max=self.stop_idx
+        )
+        if changed:
             self._update_visualized_frame()
 
     def _quit_callback(self):
