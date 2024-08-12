@@ -69,6 +69,7 @@ class Visualizer:
             self.stop_idx = self.n_scans + jump
         self.idx = jump
         self.current_filename = self._get_current_filename(self.idx)
+        self.end_reached = False
 
         # Initialize visualizer
         self._initialize_visualizer()
@@ -82,11 +83,12 @@ class Visualizer:
         self._update_visualized_frame()
         while True:
             self._ps.frame_tick()
-            if self._play_mode:
+            if self._play_mode and not self.end_reached:
                 break
 
     def advance(self):
         self.idx = self.start_idx if self.idx == self.stop_idx - 1 else self.idx + 1
+        self.end_reached = self.idx == self.stop_idx - 1 and not self._random_accessible_dataset
 
     def rewind(self):
         self.idx = self.stop_idx - 1 if self.idx == self.start_idx else self.idx - 1
@@ -109,18 +111,10 @@ class Visualizer:
         except:
             return None
 
-        # Let's do a bit of duck typing to support eating different monsters
-        dataframe = self._dataset[idx]
-
     def _get_frame(self, idx):
         # Let's do a bit of duck typing to support eating different monsters
         dataframe = self._dataset[idx]
-
-        try:
-            # old KISS-ICP dataframe, spits points, timestamps. We don't care about the last
-            points, colors, _ = dataframe  # TODO: this is not correct anymore
-        except:
-            points, colors = dataframe
+        points, colors = dataframe
         return points, colors
 
     def _update_visualized_frame(self):
@@ -143,14 +137,15 @@ class Visualizer:
 
     # GUI Callbacks ---------------------------------------------------------------------------
     def _main_gui_callback(self):
-        self._start_pause_callback()
-        if not self._play_mode:
-            self._gui.SameLine()
-            self._next_frame_callback()
-            if self._random_accessible_dataset:
+        if not self.end_reached:
+            self._start_pause_callback()
+            if not self._play_mode:
                 self._gui.SameLine()
-                self._previous_frame_callback()
-        self._gui.Separator()
+                self._next_frame_callback()
+                if self._random_accessible_dataset:
+                    self._gui.SameLine()
+                    self._previous_frame_callback()
+            self._gui.Separator()
         self._progress_bar_callback()
         if not self._random_accessible_dataset:
             self._gui.Separator()
