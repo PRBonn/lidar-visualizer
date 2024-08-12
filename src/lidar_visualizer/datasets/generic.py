@@ -82,7 +82,7 @@ class GenericDataset:
             - trimesh.load
             - PyntCloud
         """
-        # This is easy, the old KITTI format
+        # 1. The old KITTI format
         if self.file_extension == "bin":
             print("[WARNING] Reading .bin files, the only format supported is the KITTI format")
 
@@ -101,7 +101,8 @@ class GenericDataset:
         first_scan_file = self.scan_files[0]
         tried_libraries = []
         missing_libraries = []
-        # First with open3d
+
+        # 2. Try with Open3D
         try:
             self.o3d.t.io.read_point_cloud(first_scan_file)
 
@@ -116,11 +117,11 @@ class GenericDataset:
                     intensity = scan.point.intensity.numpy()
                     intensity = intensity / intensity.max()
                     colors = self.cmap(intensity)[:, :, :3].reshape(-1, 3)
-                    return np.asarray(scan.points), scan.colors
+                    return np.asarray(scan.points), colors
 
                 # else
                 scan = scan.to_legacy()
-                return np.asarray(scan.points), np.asarray(scan.colors)
+                return np.asarray(scan.points), None
 
             return read_scan_with_intensities
         except ModuleNotFoundError:
@@ -128,21 +129,23 @@ class GenericDataset:
         except:
             tried_libraries.append("open3d")
 
+        # 3. Try with trimesh
         try:
             import trimesh
 
             trimesh.load(first_scan_file)
-            return lambda file: np.asarray(trimesh.load(file).vertices)
+            return lambda file: np.asarray(trimesh.load(file).vertices), None
         except ModuleNotFoundError:
             missing_libraries.append("trimesh")
         except:
             tried_libraries.append("trimesh")
 
+        # 4. Try with PyntCloud
         try:
             from pyntcloud import PyntCloud
 
             PyntCloud.from_file(first_scan_file)
-            return lambda file: PyntCloud.from_file(file).points[["x", "y", "z"]].to_numpy()
+            return lambda file: PyntCloud.from_file(file).points[["x", "y", "z"]].to_numpy(), None
         except ModuleNotFoundError:
             missing_libraries.append("pyntcloud")
         except:

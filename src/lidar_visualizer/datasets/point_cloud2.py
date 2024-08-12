@@ -77,12 +77,12 @@ def read_point_cloud(msg: PointCloud2):
             points_structured["z"],
         ]
     ).astype(np.float64)
-    scan = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(points))
+    colors = None
     if intensity_field:
         intensity = points_structured[intensity_field].astype(np.float64)
         intensity = intensity / intensity.max()
-        scan.colors = o3d.utility.Vector3dVector(cm.viridis(intensity)[:, :3].reshape(-1, 3))
-    return scan
+        colors = cm.viridis(intensity)[:, :3].reshape(-1, 3)
+    return points, colors
 
 
 def read_points(

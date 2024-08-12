@@ -32,7 +32,7 @@ QUIT_BUTTON = "QUIT\n  [Q]"
 
 # Colors
 BACKGROUND_COLOR = [0.0, 0.0, 0.0]
-FRAME_COLOR = [0.8470, 0.1058, 0.3764]
+FRAME_COLOR = [0.8470, 0.1058, 0.3764]  # Only used if no color in original cloud
 
 # Size constants
 FRAME_PTS_SIZE = 0.06
@@ -130,7 +130,10 @@ class Visualizer:
             points,
             point_render_mode="quad",
         )
-        frame_cloud.add_color_quantity("colors", colors, enabled=True)
+        if colors is None:
+            frame_cloud.set_color(FRAME_COLOR)
+        else:
+            frame_cloud.add_color_quantity("colors", colors, enabled=True)
         frame_cloud.set_radius(self._frame_size, relative=False)
         frame_cloud.set_enabled(self._toggle_frame)
 
