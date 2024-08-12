@@ -33,6 +33,7 @@ dependencies = [
   "natsort",
   "numpy",
   "tqdm",
+  "polyscope>=2.2.1",
   "typer[all]>=0.6.0",
 ]
 
