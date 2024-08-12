@@ -56,19 +56,10 @@ class Visualizer:
         # Initialize dataset and fix input based on its nature
         self._dataset = dataset
         self._random_accessible_dataset = random_accessible_dataset
-        if not self._random_accessible_dataset:
-            self.jump = 0
-        else:
-            self.jump = jump
-        if n_scans == -1:
-            self.n_scans = len(self._dataset)
-            self.start_idx = 0
-            self.stop_idx = self.n_scans
-        else:
-            self.n_scans = min(len(self._dataset) - jump, n_scans)
-            self.start_idx = self.jump
-            self.stop_idx = self.n_scans + self.jump
-        self.idx = self.jump
+        self.start_idx = min(jump, len(self._dataset) - 1) if self._random_accessible_dataset else 0
+        self.n_scans = len(self._dataset) if n_scans == -1 else min(len(self._dataset), n_scans)
+        self.stop_idx = min(len(self._dataset), n_scans + self.start_idx)
+        self.idx = self.start_idx
         self.current_filename = self._get_current_filename(self.idx)
         self.end_reached = False
 
