@@ -33,7 +33,7 @@ from lidar_visualizer.datasets import (
     jumpable_dataloaders,
     supported_file_extensions,
 )
-from lidar_visualizer.new_visualizer import Visualizer
+from lidar_visualizer.visualizer import Visualizer
 
 
 def version_callback(value: bool):
@@ -151,12 +151,6 @@ def lidar_visualizer(
     if not dataloader:
         dataloader, data = guess_dataloader(data, default_dataloader="generic")
 
-    if (jump != 0 or n_scans != -1) and dataloader not in jumpable_dataloaders():
-        print(f"[WARNING] '{dataloader}' does not support '-jump' or '--n_scans'")
-        print(f"[WARNING] Visualazing entire dataset")
-        jump = 0
-        n_scans = -1
-
     Visualizer(
         dataset=dataset_factory(
             dataloader=dataloader,
@@ -165,6 +159,7 @@ def lidar_visualizer(
             topic=topic,
             meta=meta,
         ),
+        random_accessible_dataset=dataloader in jumpable_dataloaders(),
         n_scans=n_scans,
         jump=jump,
     ).run()

@@ -39,7 +39,7 @@ FRAME_PTS_SIZE = 0.06
 
 
 class Visualizer:
-    def __init__(self, dataset, n_scans: int = -1, jump: int = 0):
+    def __init__(self, dataset, random_accessible_dataset: bool, n_scans: int = -1, jump: int = 0):
         try:
             self._ps = importlib.import_module("polyscope")
             self._gui = self._ps.imgui
@@ -53,8 +53,12 @@ class Visualizer:
         self._play_mode = False
         self._toggle_frame = True
 
-        # Initialize data
+        # Initialize dataset and fix input based on its nature
         self._dataset = dataset
+        self._random_accessible_dataset = random_accessible_dataset
+        if self._random_accessible_dataset:
+            jump = 0
+            n_scan = -1
         if n_scans == -1:
             self.n_scans = len(self._dataset)
             self.start_idx = 0
