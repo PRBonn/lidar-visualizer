@@ -38,7 +38,6 @@ from typing import Iterable, List, Optional
 
 import matplotlib.cm as cm
 import numpy as np
-import open3d as o3d
 
 try:
     from rosbags.typesys.types import sensor_msgs__msg__PointCloud2 as PointCloud2
