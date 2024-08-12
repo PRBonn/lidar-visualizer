@@ -23,12 +23,12 @@
 import os
 import importlib
 import numpy as np
-import open3d as o3d  # TODO: o3d raus
 
 # Button names
 START_BUTTON = " START\n[SPACE]"
 PAUSE_BUTTON = " PAUSE\n[SPACE]"
 NEXT_FRAME_BUTTON = "NEXT FRAME\n\t\t [N]"
+PREVIOUS_FRAME_BUTTON = "PREVIOUS FRAME\n\t\t\t [P]"
 QUIT_BUTTON = "QUIT\n  [Q]"
 
 # Colors
@@ -51,7 +51,6 @@ class Visualizer:
         # Initialize GUI controls
         self._background_color = BACKGROUND_COLOR
         self._frame_size = FRAME_PTS_SIZE
-        self._block_execution = True
         self._play_mode = False
         self._toggle_frame = True
 
@@ -79,14 +78,11 @@ class Visualizer:
             self.advance()
 
     def update(self):
-        self.current_filename = self._get_current_filename(self.idx)
-        points, colors = self._get_frame(self.idx)
-        self._register_frame(points, colors)
-        while self._block_execution:
+        self._update_visualized_frame()
+        while True:
             self._ps.frame_tick()
             if self._play_mode:
                 break
-        self._block_execution = not self._block_execution
 
     def advance(self):
         self.idx = self.start_idx if self.idx == self.stop_idx - 1 else self.idx + 1
@@ -103,7 +99,6 @@ class Visualizer:
         self._ps.set_verbosity(0)
         self._ps.set_user_callback(self._main_gui_callback)
         self._ps.set_build_default_gui_panels(False)
-        # self._ps.set_SSAA_factor(4)
 
     def _get_current_filename(self, idx):
         # Try to fetch the current filename
@@ -127,6 +122,11 @@ class Visualizer:
             points, colors = dataframe
         return points, colors
 
+    def _update_visualized_frame(self):
+        self.current_filename = self._get_current_filename(self.idx)
+        points, colors = self._get_frame(self.idx)
+        self._register_frame(points, colors)
+
     def _register_frame(self, points, colors):
         frame_cloud = self._ps.register_point_cloud(
             "current_frame",
@@ -143,6 +143,8 @@ class Visualizer:
         if not self._play_mode:
             self._gui.SameLine()
             self._next_frame_callback()
+            self._gui.SameLine()
+            self._previous_frame_callback()
         self._gui.Separator()
         self._quit_callback()
 
@@ -150,14 +152,16 @@ class Visualizer:
         button_name = PAUSE_BUTTON if self._play_mode else START_BUTTON
         if self._gui.Button(button_name) or self._gui.IsKeyPressed(self._gui.ImGuiKey_Space):
             self._play_mode = not self._play_mode
-            # if self._play_mode:
-            #     # self._ps.set_SSAA_factor(1)
-            # else:
-            #     # self._ps.set_SSAA_factor(4)
 
     def _next_frame_callback(self):
         if self._gui.Button(NEXT_FRAME_BUTTON) or self._gui.IsKeyPressed(self._gui.ImGuiKey_N):
-            self._block_execution = not self._block_execution
+            self.advance()
+            self._update_visualized_frame()
+
+    def _previous_frame_callback(self):
+        if self._gui.Button(PREVIOUS_FRAME_BUTTON) or self._gui.IsKeyPressed(self._gui.ImGuiKey_P):
+            self.rewind()
+            self._update_visualized_frame()
 
     def _quit_callback(self):
         self._gui.SetCursorPosX(
