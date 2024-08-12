@@ -36,6 +36,9 @@ FRAME_COLOR = [0.8470, 0.1058, 0.3764]  # Only used if no color in original clou
 
 # Size constants
 FRAME_PTS_SIZE = 0.06
+FRAME_PTS_SIZE_STEP = 0.03
+FRAME_PTS_SIZE_MIN = 0.01
+FRAME_PTS_SIZE_MAX = 0.6
 
 
 class Visualizer:
@@ -165,18 +168,15 @@ class Visualizer:
             self._update_visualized_frame()
 
     def _points_controlles_callback(self):
-        step = 0.03
-        v_min = 0.01
-        v_max = 0.6
         key_changed = False
         if self._gui.IsKeyPressed(self._gui.ImGuiKey_Minus):
-            self._frame_size = max(v_min, self._frame_size - step)
+            self._frame_size = max(FRAME_PTS_SIZE_MIN, self._frame_size - FRAME_PTS_SIZE_STEP)
             key_changed = True
         if self._gui.IsKeyPressed(self._gui.ImGuiKey_Equal):
-            self._frame_size = min(v_max, self._frame_size + step)
+            self._frame_size = min(FRAME_PTS_SIZE_MAX, self._frame_size + FRAME_PTS_SIZE_STEP)
             key_changed = True
         changed, self._frame_size = self._gui.SliderFloat(
-            "Points Size", self._frame_size, v_min=v_min, v_max=v_max
+            "Points Size", self._frame_size, v_min=FRAME_PTS_SIZE_MIN, v_max=FRAME_PTS_SIZE_MAX
         )
         if changed or key_changed:
             self._ps.get_point_cloud("current_frame").set_radius(self._frame_size, relative=False)
