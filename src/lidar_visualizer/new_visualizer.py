@@ -85,7 +85,7 @@ class Visualizer:
         self.idx = self.start_idx if self.idx == self.stop_idx - 1 else self.idx + 1
 
     def rewind(self):
-        self.idx = self.start_idx if self.idx == self.stop_idx - 1 else self.idx - 1
+        self.idx = self.start_idx if self.idx == self.stop_idx else self.idx - 1
 
     # Private Interface ---------------------------------------------------------------------------
     def _initialize_visualizer(self):
@@ -164,7 +164,11 @@ class Visualizer:
 
     def _progress_bar_callback(self):
         changed, self.idx = self._gui.SliderInt(
-            "Progress Bar", self.idx, v_min=self.start_idx, v_max=self.stop_idx
+            f"/{self.stop_idx-1}###Progress Bar",
+            self.idx,
+            v_min=self.start_idx,
+            v_max=self.stop_idx - 1,
+            format="Frame: %d",
         )
         if changed:
             self._update_visualized_frame()
