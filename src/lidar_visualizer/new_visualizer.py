@@ -89,7 +89,7 @@ class Visualizer:
 
     # Private Interface ---------------------------------------------------------------------------
     def _initialize_visualizer(self):
-        self._ps.set_program_name("KissICP Visualizer")
+        self._ps.set_program_name("LIDAR Visualizer")
         self._ps.init()
         self._ps.set_ground_plane_mode("none")
         self._ps.set_background_color(BACKGROUND_COLOR)
