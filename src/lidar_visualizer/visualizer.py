@@ -58,14 +58,16 @@ class Visualizer:
         self._random_accessible_dataset = random_accessible_dataset
         if not self._random_accessible_dataset:
             self.jump = 0
+        else:
+            self.jump = jump
         if n_scans == -1:
             self.n_scans = len(self._dataset)
             self.start_idx = 0
             self.stop_idx = self.n_scans
         else:
             self.n_scans = min(len(self._dataset) - jump, n_scans)
-            self.start_idx = jump
-            self.stop_idx = self.n_scans + jump
+            self.start_idx = self.jump
+            self.stop_idx = self.n_scans + self.jump
         self.idx = self.jump
         self.current_filename = self._get_current_filename(self.idx)
         self.end_reached = False
