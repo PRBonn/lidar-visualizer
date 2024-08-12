@@ -181,7 +181,7 @@ class Visualizer:
 
     def _information_callback(self):
         self._gui.TextUnformatted(
-            f"[WARNING] The current dataloader does not allow you to access frames\nrandomly, for this reason only sequential reading is possibile.\nFurthermore, the options '--jump' and '--n-scans' will be ignored \nand all the dataset, starting from the beginning will be visualized."
+            f"[WARNING] The current dataloader does not allow you to access frames\nrandomly, for this reason only sequential reading is possibile.\nFurthermore, the options '--jump' will be ignored and the dataset\nwill always be visualized from the beginning."
         )
 
     def _quit_callback(self):
