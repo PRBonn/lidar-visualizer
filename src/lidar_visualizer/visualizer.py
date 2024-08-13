@@ -36,9 +36,9 @@ FRAME_COLOR = [0.8470, 0.1058, 0.3764]  # Only used if no color in original clou
 
 # Size constants
 FRAME_PTS_SIZE = 0.06
-FRAME_PTS_SIZE_STEP = 0.03
-FRAME_PTS_SIZE_MIN = 0.01
-FRAME_PTS_SIZE_MAX = 0.6
+FRAME_PTS_SIZE_STEP = 0.01
+FRAME_PTS_SIZE_MIN = 0.001
+FRAME_PTS_SIZE_MAX = 0.25
 
 
 class Visualizer:
