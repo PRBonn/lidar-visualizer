@@ -207,7 +207,7 @@ class Visualizer:
 
     def _information_callback(self):
         self._gui.TextUnformatted(
-            f"[WARNING] The current dataloader does not allow you to access frames\nrandomly.."
+            f"[WARNING] The current dataloader does not allow you to access frames\nrandomly..."
         )
 
     def _center_viewpoint_callback(self):
