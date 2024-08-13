@@ -26,12 +26,12 @@ import os
 import time
 
 # Button names
-START_BUTTON = " START\n[SPACE]"
-PAUSE_BUTTON = " PAUSE\n[SPACE]"
-NEXT_FRAME_BUTTON = "NEXT FRAME\n\t\t [N]"
-PREVIOUS_FRAME_BUTTON = "PREVIOUS FRAME\n\t\t\t [P]"
-CENTER_VIEWPOINT_BUTTON = "CENTER VIEWPOINT\n\t\t\t\t[C]"
-QUIT_BUTTON = "QUIT\n  [Q]"
+START_BUTTON = "START [SPACE]"
+PAUSE_BUTTON = "PAUSE [SPACE]"
+NEXT_FRAME_BUTTON = "NEXT FRAME [N]"
+PREVIOUS_FRAME_BUTTON = "PREVIOUS FRAME [P]"
+CENTER_VIEWPOINT_BUTTON = "CENTER VIEWPOINT [C]"
+QUIT_BUTTON = "QUIT [Q]"
 
 # Colors
 BACKGROUND_COLOR = [0.0, 0.0, 0.0]
@@ -149,9 +149,9 @@ class Visualizer:
                 if self._random_accessible_dataset:
                     self._gui.SameLine()
                     self._previous_frame_callback()
-        self._speed_level_callback()
         self._gui.Separator()
         self._progress_bar_callback()
+        self._speed_level_callback()
         self._gui.Separator()
         self._gui.TextUnformatted("Scene Options:")
         self._background_color_callback()
