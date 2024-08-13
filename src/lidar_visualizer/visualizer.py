@@ -1,8 +1,8 @@
 # MIT License
 #
 # Copyright (c) 2022 Ignacio Vizzo, Tiziano Guadagnino, Benedikt Mersch, Cyrill
-# Copyright (c) 2024  Luca Lobefaro
 # Stachniss.
+# Copyright (c) 2024  Luca Lobefaro
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,7 @@ START_BUTTON = " START\n[SPACE]"
 PAUSE_BUTTON = " PAUSE\n[SPACE]"
 NEXT_FRAME_BUTTON = "NEXT FRAME\n\t\t [N]"
 PREVIOUS_FRAME_BUTTON = "PREVIOUS FRAME\n\t\t\t [P]"
+CENTER_VIEWPOINT_BUTTON = "CENTER VIEWPOINT\n\t\t\t\t[C]"
 QUIT_BUTTON = "QUIT\n  [Q]"
 
 # Colors
@@ -151,6 +152,8 @@ class Visualizer:
             self._gui.Separator()
             self._information_callback()
         self._gui.Separator()
+        self._center_viewpoint_callback()
+        self._gui.SameLine()
         self._quit_callback()
 
     def _start_pause_callback(self):
@@ -206,6 +209,12 @@ class Visualizer:
         self._gui.TextUnformatted(
             f"[WARNING] The current dataloader does not allow you to access frames\nrandomly, for this reason only sequential reading is possibile.\nFurthermore, the options '--jump' will be ignored and the dataset\nwill always be visualized from the beginning."
         )
+
+    def _center_viewpoint_callback(self):
+        if self._gui.Button(CENTER_VIEWPOINT_BUTTON) or self._gui.IsKeyPressed(
+            self._gui.ImGuiKey_C
+        ):
+            self._ps.reset_camera_to_home_view()
 
     def _quit_callback(self):
         self._gui.SetCursorPosX(
