@@ -1,6 +1,7 @@
 # MIT License
 #
-# Copyright (c) 2024 Luca Lobefaro, Ignacio Vizzo, Tiziano Guadagnino, Benedikt Mersch, Cyrill
+# Copyright (c) 2022 Ignacio Vizzo, Tiziano Guadagnino, Benedikt Mersch, Cyrill
+# Copyright (c) 2024  Luca Lobefaro
 # Stachniss.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
