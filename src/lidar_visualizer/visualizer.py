@@ -23,6 +23,7 @@
 # SOFTWARE.
 import importlib
 import os
+import time
 
 # Button names
 START_BUTTON = " START\n[SPACE]"
@@ -57,6 +58,7 @@ class Visualizer:
         self._frame_size = FRAME_PTS_SIZE
         self._play_mode = False
         self._toggle_frame = True
+        self._speed_level = 5
 
         # Initialize dataset and fix input based on its nature
         self._dataset = dataset
@@ -79,6 +81,7 @@ class Visualizer:
     def update(self):
         self._update_visualized_frame()
         while True:
+            time.sleep(self._compute_speed())
             self._ps.frame_tick()
             if self._play_mode and not self.end_reached:
                 break
@@ -132,6 +135,9 @@ class Visualizer:
         frame_cloud.set_radius(self._frame_size, relative=False)
         frame_cloud.set_enabled(self._toggle_frame)
 
+    def _compute_speed(self):
+        return 0.1 - 0.02 * self._speed_level
+
     # GUI Callbacks ---------------------------------------------------------------------------
     def _main_gui_callback(self):
         self._gui.TextUnformatted("Controls:")
@@ -143,6 +149,8 @@ class Visualizer:
                 if self._random_accessible_dataset:
                     self._gui.SameLine()
                     self._previous_frame_callback()
+        self._speed_level_callback()
+        self._gui.Separator()
         self._progress_bar_callback()
         self._gui.Separator()
         self._gui.TextUnformatted("Scene Options:")
@@ -171,6 +179,27 @@ class Visualizer:
             self.rewind()
             self._update_visualized_frame()
 
+    def _progress_bar_callback(self):
+        changed, idx = self._gui.SliderInt(
+            f"/{self.stop_idx-1}###Progress Bar",
+            self.idx,
+            v_min=self.start_idx,
+            v_max=self.stop_idx - 1,
+            format="Frame: %d",
+        )
+        if changed and self._random_accessible_dataset:
+            self.idx = idx
+            self._update_visualized_frame()
+
+    def _speed_level_callback(self):
+        _, self._speed_level = self._gui.SliderInt(
+            "Speed Level",
+            self._speed_level,
+            v_min=0,
+            v_max=5,
+            format="%d",
+        )
+
     def _points_controlles_callback(self):
         key_changed = False
         if self._gui.IsKeyPressed(self._gui.ImGuiKey_Minus):
@@ -192,18 +221,6 @@ class Visualizer:
         )
         if changed:
             self._ps.set_background_color(self._background_color)
-
-    def _progress_bar_callback(self):
-        changed, idx = self._gui.SliderInt(
-            f"/{self.stop_idx-1}###Progress Bar",
-            self.idx,
-            v_min=self.start_idx,
-            v_max=self.stop_idx - 1,
-            format="Frame: %d",
-        )
-        if changed and self._random_accessible_dataset:
-            self.idx = idx
-            self._update_visualized_frame()
 
     def _information_callback(self):
         self._gui.TextUnformatted(
