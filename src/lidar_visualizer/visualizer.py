@@ -181,7 +181,7 @@ class Visualizer:
 
     def _progress_bar_callback(self):
         changed, idx = self._gui.SliderInt(
-            f"/{self.stop_idx-1}###Progress Bar",
+            f"\t{self.stop_idx} Frames###Progress Bar",
             self.idx,
             v_min=self.start_idx,
             v_max=self.stop_idx - 1,
@@ -193,7 +193,7 @@ class Visualizer:
 
     def _speed_level_callback(self):
         _, self._speed_level = self._gui.SliderInt(
-            "Speed Level",
+            "\tPlayback Speed",
             self._speed_level,
             v_min=0,
             v_max=5,
