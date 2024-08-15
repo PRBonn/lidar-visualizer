@@ -21,9 +21,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
 import glob
-import importlib
 import os
 from typing import Optional
 
@@ -90,14 +88,6 @@ class OusterDataloader:
             raise ModuleNotFoundError(
                 f'ouster-sdk is not installed on your system, run "pip install ouster-sdk"'
             ) from e
-        try:
-            self.o3d = importlib.import_module("open3d")
-        except ModuleNotFoundError as e:
-            raise ModuleNotFoundError(
-                "Open3D is not installed on your system, to fix this either "
-                'run "pip install open3d" '
-                "or check https://www.open3d.org/docs/release/getting_started.html"
-            ) from e
 
         # since we import ouster-sdk's client module locally, we keep it locally as well
         self._client = client
@@ -139,7 +129,6 @@ class OusterDataloader:
 
     def get_color_image(self, scan):
         """This function was taken from the Ouster SDK. All rights reserved to Ouster, Inc
-
         https://github.com/ouster-lidar/ouster_example/blob/master/python/src/ouster/sdk/examples/open3d.py
         """
         fields = list(scan.fields)
@@ -173,11 +162,10 @@ class OusterDataloader:
         xyz = self._xyz_lut(scan)[sel_flag]
         ref = self.get_color_image(scan)[sel_flag]
 
-        # Build Open3D object
-        cloud = self.o3d.geometry.PointCloud()
-        cloud.points = self.o3d.utility.Vector3dVector(xyz.reshape((-1, 3)))
-        cloud.colors = self.o3d.utility.Vector3dVector(ref.reshape((-1, 3)))
-        return cloud
+        points = xyz.reshape((-1, 3))
+        colors = ref.reshape((-1, 3))
+
+        return points, colors
 
     def __len__(self):
         return self._scans_num

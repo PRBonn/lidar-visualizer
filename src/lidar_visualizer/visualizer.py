@@ -2,6 +2,7 @@
 #
 # Copyright (c) 2022 Ignacio Vizzo, Tiziano Guadagnino, Benedikt Mersch, Cyrill
 # Stachniss.
+# Copyright (c) 2024  Luca Lobefaro
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,79 +23,88 @@
 # SOFTWARE.
 import importlib
 import os
-from functools import partial
-from typing import Callable, List
+import time
 
-from tqdm import tqdm
+# Button names
+START_BUTTON = "START [SPACE]"
+PAUSE_BUTTON = "PAUSE [SPACE]"
+NEXT_FRAME_BUTTON = "NEXT FRAME [N]"
+PREVIOUS_FRAME_BUTTON = "PREVIOUS FRAME [P]"
+CENTER_VIEWPOINT_BUTTON = "CENTER VIEWPOINT [C]"
+QUIT_BUTTON = "QUIT [Q]"
+
+# Colors
+BACKGROUND_COLOR = [0.0, 0.0, 0.0]
+FRAME_COLOR = [0.8470, 0.1058, 0.3764]  # Only used if no color in original cloud
+
+# Size constants
+FRAME_PTS_SIZE_N_STEPS = 20
+FRAME_PTS_SIZE_MIN = 0.005
+FRAME_PTS_SIZE_MAX = 0.1
 
 
 class Visualizer:
-    def __init__(self, dataset, n_scans: int = -1, jump: int = 0):
+    def __init__(self, dataset, random_accessible_dataset: bool, n_scans: int = -1, jump: int = 0):
         try:
-            self.o3d = importlib.import_module("open3d")
-        except ModuleNotFoundError as e:
-            raise ModuleNotFoundError(
-                "Open3D is not installed on your system, to fix this either "
-                'run "pip install open3d" '
-                "or check https://www.open3d.org/docs/release/getting_started.html"
-            ) from e
-        # Initialize GUI controls
-        self.block_vis = True
-        self.play_crun = False
-        self.reset_bounding_box = True
+            self._ps = importlib.import_module("polyscope")
+            self._gui = self._ps.imgui
+        except ModuleNotFoundError:
+            print(f'polyscope is not installed on your system, run "pip install polyscope"')
+            exit(1)
 
-        # Create data
-        self.source = self.o3d.geometry.PointCloud()
+        # Initialize GUI controls
+        self._background_color = BACKGROUND_COLOR
+        self._frame_size_step = (FRAME_PTS_SIZE_MAX - FRAME_PTS_SIZE_MIN) / (
+            FRAME_PTS_SIZE_N_STEPS - 1
+        )
+        self._frame_size = 0.5 * FRAME_PTS_SIZE_N_STEPS * self._frame_size_step
+        self._play_mode = False
+        self._toggle_frame = True
+        self._playback_delay = 0.0
+
+        # Initialize dataset and fix input based on its nature
+        self._dataset = dataset
+        self._random_accessible_dataset = random_accessible_dataset
+        self.start_idx = min(jump, len(self._dataset) - 1) if self._random_accessible_dataset else 0
+        self.n_scans = len(self._dataset) if n_scans == -1 else min(len(self._dataset), n_scans)
+        self.stop_idx = min(len(self._dataset), self.n_scans + self.start_idx)
+        self.idx = self.start_idx
+        self.current_filename = self._get_current_filename(self.idx)
+        self.end_reached = False
 
         # Initialize visualizer
-        self.vis = self.o3d.visualization.VisualizerWithKeyCallback()
-        self._register_key_callbacks()
         self._initialize_visualizer()
-
-        self._dataset = dataset
-        if n_scans == -1:
-            self.n_scans = len(self._dataset)
-            self.start_idx = 0
-            self.stop_idx = self.n_scans
-        else:
-            self.n_scans = min(len(self._dataset) - jump, n_scans)
-            self.start_idx = jump
-            self.stop_idx = self.n_scans + jump
-
-        # Initialize progress bar data
-        self.idx = jump
-        self.current_filename = self._get_current_filename(self.idx)
-        self.pbar = tqdm(total=self.n_scans, dynamic_ncols=True)
-        self.update_pbar()
 
     def run(self):
         while True:
             self.update()
             self.advance()
 
-    def update(self, poll_events=True):
-        self.current_filename = self._get_current_filename(self.idx)
-        self._update_geometries(self._get_frame(self.idx))
-        while poll_events:
-            self.vis.poll_events()
-            self.vis.update_renderer()
-            if self.play_crun:
+    def update(self):
+        self._update_visualized_frame()
+        while True:
+            time.sleep(self._playback_delay)
+            self._ps.frame_tick()
+            if self._play_mode and not self.end_reached:
                 break
 
     def advance(self):
         self.idx = self.start_idx if self.idx == self.stop_idx - 1 else self.idx + 1
-        self.update_pbar()
+        self.end_reached = self.idx == self.stop_idx - 1 and not self._random_accessible_dataset
 
     def rewind(self):
-        self.idx = self.start_idx if self.idx == self.stop_idx - 1 else self.idx - 1
-        self.update_pbar()
+        self.idx = self.stop_idx - 1 if self.idx == self.start_idx else self.idx - 1
 
-    def update_pbar(self):
-        self.pbar.n = self.idx % self.n_scans
-        self.pbar.set_description_str(self._get_current_filename(self.pbar.n))
-        self.pbar.refresh()
+    # Private Interface ---------------------------------------------------------------------------
+    def _initialize_visualizer(self):
+        self._ps.set_program_name("LIDAR Visualizer")
+        self._ps.init()
+        self._ps.set_ground_plane_mode("none")
+        self._ps.set_background_color(BACKGROUND_COLOR)
+        self._ps.set_verbosity(0)
+        self._ps.set_user_callback(self._main_gui_callback)
+        self._ps.set_build_default_gui_panels(False)
 
-    # Private Interaface ---------------------------------------------------------------------------
     def _get_current_filename(self, idx):
         # Try to fetch the current filename
         try:
@@ -103,86 +113,139 @@ class Visualizer:
         except:
             return None
 
-        # Let's do a bit of duck typing to support eating different monsters
-        dataframe = self._dataset[idx]
-
     def _get_frame(self, idx):
         # Let's do a bit of duck typing to support eating different monsters
         dataframe = self._dataset[idx]
+        points, colors = dataframe
+        return points, colors
 
-        try:
-            # old KISS-ICP dataframe, spits points, timestamps. We don't care about the last
-            frame, _ = dataframe
-        except:
-            frame = dataframe
-        if not isinstance(frame, self.o3d.geometry.PointCloud):
-            # convert to Open3D::Geometry::PointCloud
-            frame = self.o3d.geometry.PointCloud(self.o3d.utility.Vector3dVector(frame))
-        return frame
+    def _update_visualized_frame(self):
+        self.current_filename = self._get_current_filename(self.idx)
+        points, colors = self._get_frame(self.idx)
+        self._register_frame(points, colors)
 
-    def _next_frame(self, vis):
-        self.play_crun = False
-        self.advance()
-        self.update(False)
+    def _register_frame(self, points, colors):
+        frame_cloud = self._ps.register_point_cloud(
+            "current_frame",
+            points,
+            point_render_mode="quad",
+        )
+        if colors is None:
+            frame_cloud.set_color(FRAME_COLOR)
+        else:
+            frame_cloud.add_color_quantity("colors", colors, enabled=True)
+        frame_cloud.set_radius(self._frame_size, relative=False)
+        frame_cloud.set_enabled(self._toggle_frame)
 
-    def _prev_frame(self, vis):
-        self.play_crun = False
-        self.rewind()
-        self.update(False)
+    # GUI Callbacks ---------------------------------------------------------------------------
+    def _main_gui_callback(self):
+        self._gui.TextUnformatted("Controls:")
+        if not self.end_reached:
+            self._start_pause_callback()
+            if not self._play_mode:
+                self._gui.SameLine()
+                self._next_frame_callback()
+                if self._random_accessible_dataset:
+                    self._gui.SameLine()
+                    self._previous_frame_callback()
+        self._gui.Separator()
+        self._progress_bar_callback()
+        self._playback_delay_callback()
+        self._gui.Separator()
+        self._gui.TextUnformatted("Scene Options:")
+        self._background_color_callback()
+        self._points_controlles_callback()
+        if not self._random_accessible_dataset:
+            self._gui.Separator()
+            self._information_callback()
+        self._gui.Separator()
+        self._center_viewpoint_callback()
+        self._gui.SameLine()
+        self._quit_callback()
 
-    def _update_geometries(self, source):
-        self.source.points = source.points
-        self.source.colors = source.colors
-        self.vis.update_geometry(self.source)
-        if self.reset_bounding_box:
-            self.vis.reset_view_point(True)
-            self.reset_bounding_box = False
+    def _start_pause_callback(self):
+        button_name = PAUSE_BUTTON if self._play_mode else START_BUTTON
+        if self._gui.Button(button_name) or self._gui.IsKeyPressed(self._gui.ImGuiKey_Space):
+            self._play_mode = not self._play_mode
 
-    # GUI controls ---------------------------------------------------------------------------
-    def _initialize_visualizer(self):
-        w_name = self.__class__.__name__
-        self.vis.create_window(window_name=w_name, width=1920, height=1080)
-        self.vis.add_geometry(self.source, reset_bounding_box=False)
-        self._set_black_background(self.vis)
-        self.vis.get_render_option().point_size = 1
-        print(
-            f"{w_name} initialized. Press:\n"
-            "\t[SPACE] to pause/start\n"
-            "\t  [ESC] to exit\n"
-            "\t    [N] to render next frame\n"
-            "\t    [P] to render prev frame\n"
-            "\t    [W] to toggle a white background\n"
-            "\t    [B] to toggle a black background\n"
+    def _next_frame_callback(self):
+        if self._gui.Button(NEXT_FRAME_BUTTON) or self._gui.IsKeyPressed(self._gui.ImGuiKey_N):
+            self.advance()
+            self._update_visualized_frame()
+
+    def _previous_frame_callback(self):
+        if self._gui.Button(PREVIOUS_FRAME_BUTTON) or self._gui.IsKeyPressed(self._gui.ImGuiKey_P):
+            self.rewind()
+            self._update_visualized_frame()
+
+    def _progress_bar_callback(self):
+        changed, idx = self._gui.SliderInt(
+            f"\t{self.stop_idx} Frames###Progress Bar",
+            self.idx,
+            v_min=self.start_idx,
+            v_max=self.stop_idx - 1,
+            format="Frame: %d",
+        )
+        if changed and self._random_accessible_dataset:
+            self.idx = idx
+            self._update_visualized_frame()
+
+    def _playback_delay_callback(self):
+        _, self._playback_delay = self._gui.SliderFloat(
+            "\tPlayback Delay",
+            self._playback_delay,
+            v_min=0.0,
+            v_max=0.1,
+            format="%.2f s",
         )
 
-    def _render_to_png(self, vis):
-        filename = self.current_filename if self.current_filename else str(self.idx).zfill(6)
-        print(f"Saving screenshot to {filename}.png")
-        vis.capture_screen_image(f"{filename}.png")
+    def _points_controlles_callback(self):
+        key_changed = False
+        if self._gui.IsKeyPressed(self._gui.ImGuiKey_Minus):
+            self._frame_size = max(FRAME_PTS_SIZE_MIN, self._frame_size - self._frame_size_step)
+            key_changed = True
+        if self._gui.IsKeyPressed(self._gui.ImGuiKey_Equal):
+            self._frame_size = min(FRAME_PTS_SIZE_MAX, self._frame_size + self._frame_size_step)
+            key_changed = True
+        changed, self._frame_size = self._gui.SliderFloat(
+            "Points Size", self._frame_size, v_min=FRAME_PTS_SIZE_MIN, v_max=FRAME_PTS_SIZE_MAX
+        )
+        if changed or key_changed:
+            self._ps.get_point_cloud("current_frame").set_radius(self._frame_size, relative=False)
 
-    def _register_key_callback(self, keys: List, callback: Callable):
-        for key in keys:
-            self.vis.register_key_callback(ord(str(key)), partial(callback))
+    def _background_color_callback(self):
+        changed, self._background_color = self._gui.ColorEdit3(
+            "Background Color",
+            self._background_color,
+        )
+        if changed:
+            self._ps.set_background_color(self._background_color)
 
-    def _register_key_callbacks(self):
-        self._register_key_callback(["Ā", "Q", "\x1b"], self._quit)
-        self._register_key_callback([" "], self._start_stop)
-        self._register_key_callback(["N"], self._next_frame)
-        self._register_key_callback(["P"], self._prev_frame)
-        self._register_key_callback(["S"], self._render_to_png)
-        self._register_key_callback(["B"], self._set_black_background)
-        self._register_key_callback(["W"], self._set_white_background)
+    def _information_callback(self):
+        self._gui.TextUnformatted(
+            f"[WARNING] The current dataloader does not allow you to access frames\nrandomly..."
+        )
 
-    def _set_black_background(self, vis):
-        vis.get_render_option().background_color = [0.0, 0.0, 0.0]
+    def _center_viewpoint_callback(self):
+        if self._gui.Button(CENTER_VIEWPOINT_BUTTON) or self._gui.IsKeyPressed(
+            self._gui.ImGuiKey_C
+        ):
+            self._ps.reset_camera_to_home_view()
 
-    def _set_white_background(self, vis):
-        vis.get_render_option().background_color = [1.0, 1.0, 1.0]
-
-    def _quit(self, vis):
-        print("Destroying Visualizer")
-        vis.destroy_window()
-        os._exit(0)
-
-    def _start_stop(self, vis):
-        self.play_crun = not self.play_crun
+    def _quit_callback(self):
+        posX = (
+            self._gui.GetCursorPosX()
+            + self._gui.GetColumnWidth()
+            - self._gui.CalcTextSize(QUIT_BUTTON)[0]
+            - self._gui.GetScrollX()
+            - self._gui.ImGuiStyleVar_ItemSpacing
+        )
+        self._gui.SetCursorPosX(posX)
+        if (
+            self._gui.Button(QUIT_BUTTON)
+            or self._gui.IsKeyPressed(self._gui.ImGuiKey_Escape)
+            or self._gui.IsKeyPressed(self._gui.ImGuiKey_Q)
+        ):
+            print("Destroying Visualizer")
+            self._ps.unshow()
+            os._exit(0)

@@ -82,7 +82,7 @@ class GenericDataset:
             - trimesh.load
             - PyntCloud
         """
-        # This is easy, the old KITTI format
+        # 1. The old KITTI format
         if self.file_extension == "bin":
             print("[WARNING] Reading .bin files, the only format supported is the KITTI format")
 
@@ -92,19 +92,17 @@ class GenericDataset:
                 )
                 points = points_xyzi[:, 0:3]
                 intensity = points_xyzi[:, -1]
-                scan = self.o3d.geometry.PointCloud()
                 intensity = intensity / intensity.max()
                 colors = self.cmap(intensity)[:, :3].reshape(-1, 3)
-                scan.points = self.o3d.utility.Vector3dVector(points)
-                scan.colors = self.o3d.utility.Vector3dVector(colors)
-                return scan
+                return points, colors
 
             return read_kitti_scan
 
         first_scan_file = self.scan_files[0]
         tried_libraries = []
         missing_libraries = []
-        # First with open3d
+
+        # 2. Try with Open3D
         try:
             self.o3d.t.io.read_point_cloud(first_scan_file)
 
@@ -112,15 +110,18 @@ class GenericDataset:
                 scan = self.o3d.t.io.read_point_cloud(file)
 
                 if "colors" in dir(scan.point):
-                    return scan.to_legacy()
+                    scan = scan.to_legacy()
+                    return np.asarray(scan.points), np.asarray(scan.colors)
 
                 if "intensity" in dir(scan.point):
                     intensity = scan.point.intensity.numpy()
                     intensity = intensity / intensity.max()
-                    scan.point.colors = self.cmap(intensity)[:, :, :3].reshape(-1, 3)
+                    colors = self.cmap(intensity)[:, :, :3].reshape(-1, 3)
+                    return np.asarray(scan.points), colors
 
                 # else
-                return scan.to_legacy()
+                scan = scan.to_legacy()
+                return np.asarray(scan.points), None
 
             return read_scan_with_intensities
         except ModuleNotFoundError:
@@ -128,21 +129,23 @@ class GenericDataset:
         except:
             tried_libraries.append("open3d")
 
+        # 3. Try with trimesh
         try:
             import trimesh
 
             trimesh.load(first_scan_file)
-            return lambda file: np.asarray(trimesh.load(file).vertices)
+            return lambda file: np.asarray(trimesh.load(file).vertices), None
         except ModuleNotFoundError:
             missing_libraries.append("trimesh")
         except:
             tried_libraries.append("trimesh")
 
+        # 4. Try with PyntCloud
         try:
             from pyntcloud import PyntCloud
 
             PyntCloud.from_file(first_scan_file)
-            return lambda file: PyntCloud.from_file(file).points[["x", "y", "z"]].to_numpy()
+            return lambda file: PyntCloud.from_file(file).points[["x", "y", "z"]].to_numpy(), None
         except ModuleNotFoundError:
             missing_libraries.append("pyntcloud")
         except:
