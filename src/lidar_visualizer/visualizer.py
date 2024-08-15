@@ -60,7 +60,7 @@ class Visualizer:
         self._frame_size = 0.5 * FRAME_PTS_SIZE_N_STEPS * self._frame_size_step
         self._play_mode = False
         self._toggle_frame = True
-        self._speed_level = 5
+        self._playback_delay = 0.0
 
         # Initialize dataset and fix input based on its nature
         self._dataset = dataset
@@ -83,7 +83,7 @@ class Visualizer:
     def update(self):
         self._update_visualized_frame()
         while True:
-            time.sleep(self._compute_speed())
+            time.sleep(self._playback_delay)
             self._ps.frame_tick()
             if self._play_mode and not self.end_reached:
                 break
@@ -137,9 +137,6 @@ class Visualizer:
         frame_cloud.set_radius(self._frame_size, relative=False)
         frame_cloud.set_enabled(self._toggle_frame)
 
-    def _compute_speed(self):
-        return 0.1 - 0.02 * self._speed_level
-
     # GUI Callbacks ---------------------------------------------------------------------------
     def _main_gui_callback(self):
         self._gui.TextUnformatted("Controls:")
@@ -153,7 +150,7 @@ class Visualizer:
                     self._previous_frame_callback()
         self._gui.Separator()
         self._progress_bar_callback()
-        self._speed_level_callback()
+        self._playback_delay_callback()
         self._gui.Separator()
         self._gui.TextUnformatted("Scene Options:")
         self._background_color_callback()
@@ -193,13 +190,13 @@ class Visualizer:
             self.idx = idx
             self._update_visualized_frame()
 
-    def _speed_level_callback(self):
-        _, self._speed_level = self._gui.SliderInt(
-            "\tPlayback Speed",
-            self._speed_level,
-            v_min=0,
-            v_max=5,
-            format="%d",
+    def _playback_delay_callback(self):
+        _, self._playback_delay = self._gui.SliderFloat(
+            "\tPlayback Delay",
+            self._playback_delay,
+            v_min=0.0,
+            v_max=0.1,
+            format="%.2f s",
         )
 
     def _points_controlles_callback(self):
