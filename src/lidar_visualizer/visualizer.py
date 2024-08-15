@@ -39,7 +39,7 @@ FRAME_COLOR = [0.8470, 0.1058, 0.3764]  # Only used if no color in original clou
 
 # Size constants
 FRAME_PTS_SIZE_N_STEPS = 20
-FRAME_PTS_SIZE_MIN = 0.001
+FRAME_PTS_SIZE_MIN = 0.005
 FRAME_PTS_SIZE_MAX = 0.1
 
 
