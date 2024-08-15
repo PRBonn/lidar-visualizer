@@ -38,9 +38,8 @@ BACKGROUND_COLOR = [0.0, 0.0, 0.0]
 FRAME_COLOR = [0.8470, 0.1058, 0.3764]  # Only used if no color in original cloud
 
 # Size constants
-FRAME_PTS_SIZE = 0.06
-FRAME_PTS_SIZE_STEP = 0.005
-FRAME_PTS_SIZE_MIN = 0.02
+FRAME_PTS_SIZE_N_STEPS = 20
+FRAME_PTS_SIZE_MIN = 0.001
 FRAME_PTS_SIZE_MAX = 0.1
 
 
@@ -49,13 +48,16 @@ class Visualizer:
         try:
             self._ps = importlib.import_module("polyscope")
             self._gui = self._ps.imgui
-        except ModuleNotFoundError as err:
+        except ModuleNotFoundError:
             print(f'polyscope is not installed on your system, run "pip install polyscope"')
             exit(1)
 
         # Initialize GUI controls
         self._background_color = BACKGROUND_COLOR
-        self._frame_size = FRAME_PTS_SIZE
+        self._frame_size_step = (FRAME_PTS_SIZE_MAX - FRAME_PTS_SIZE_MIN) / (
+            FRAME_PTS_SIZE_N_STEPS - 1
+        )
+        self._frame_size = 0.5 * FRAME_PTS_SIZE_N_STEPS * self._frame_size_step
         self._play_mode = False
         self._toggle_frame = True
         self._speed_level = 5
@@ -203,10 +205,10 @@ class Visualizer:
     def _points_controlles_callback(self):
         key_changed = False
         if self._gui.IsKeyPressed(self._gui.ImGuiKey_Minus):
-            self._frame_size = max(FRAME_PTS_SIZE_MIN, self._frame_size - FRAME_PTS_SIZE_STEP)
+            self._frame_size = max(FRAME_PTS_SIZE_MIN, self._frame_size - self._frame_size_step)
             key_changed = True
         if self._gui.IsKeyPressed(self._gui.ImGuiKey_Equal):
-            self._frame_size = min(FRAME_PTS_SIZE_MAX, self._frame_size + FRAME_PTS_SIZE_STEP)
+            self._frame_size = min(FRAME_PTS_SIZE_MAX, self._frame_size + self._frame_size_step)
             key_changed = True
         changed, self._frame_size = self._gui.SliderFloat(
             "Points Size", self._frame_size, v_min=FRAME_PTS_SIZE_MIN, v_max=FRAME_PTS_SIZE_MAX
