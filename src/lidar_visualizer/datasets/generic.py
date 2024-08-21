@@ -117,7 +117,7 @@ class GenericDataset:
                     intensity = scan.point.intensity.numpy()
                     intensity = intensity / intensity.max()
                     colors = self.cmap(intensity)[:, :, :3].reshape(-1, 3)
-                    return np.asarray(scan.points), colors
+                    return scan.point.positions.numpy(), colors
 
                 # else
                 scan = scan.to_legacy()
