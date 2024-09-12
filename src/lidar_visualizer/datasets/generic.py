@@ -132,6 +132,8 @@ class GenericDataset:
             except ModuleNotFoundError:
                 missing_libraries.append("pye57")
                 print("[WARNING] pye57 not installed")
+            except:
+                tried_libraries.append("pye57")
 
 
         # 3. Try with Open3D
@@ -183,10 +185,10 @@ class GenericDataset:
         except:
             tried_libraries.append("pyntcloud")
 
-        # If reach this point means that none of the librares exist/could read the file
+        # If reach this point means that none of the libraries exist/could read the file
         if not tried_libraries:
             print(
-                "No 3D library is insallted in your system. Install one of the following "
+                "No 3D library is installed in your system. Install one of the following "
                 "to read the pointclouds"
             )
             print("\n".join(missing_libraries))
