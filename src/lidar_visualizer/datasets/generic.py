@@ -77,7 +77,10 @@ class GenericDataset:
     def _get_point_cloud_reader(self):
         """Attempt to guess with try/catch blocks which is the best point cloud reader to use for
         the given dataset folder. Supported readers so far are:
+
+        File readers are functions which take a filename as an input and return a tuple of points and colors.
             - np.fromfile
+            - pye57
             - open3d
             - trimesh.load
             - PyntCloud
@@ -102,7 +105,36 @@ class GenericDataset:
         tried_libraries = []
         missing_libraries = []
 
-        # 2. Try with Open3D
+        # 2 Try with pye57
+        if self.file_extension == "e57":
+            try:
+                import pye57
+                def read_e57_scan(file):
+                    e57 = pye57.E57(file)
+                    point_data = None
+                    color_data = None
+                    # One e57 file can contain multiple scans, scanned from different positions
+                    for i in range(e57.scan_count):
+                        i = e57.read_scan(i, colors=True, ignore_missing_fields=True)
+                        scan_data = np.stack([i["cartesianX"], i["cartesianY"], i["cartesianZ"]], axis=1)
+                        point_data = np.concat([point_data, scan_data]) if point_data is not None else scan_data
+                        try:
+                            scan_color_data = np.stack([i["colorRed"], i["colorGreen"], i["colorBlue"]], axis=1)
+                            color_data = np.concat(
+                                [color_data, scan_color_data]) if color_data is not None else scan_color_data
+                        except KeyError:
+                            pass
+                    # e57 file colors are in 0-255 range
+                    color_data = color_data / 255.0 if color_data is not None else None
+                    return point_data, color_data
+
+                return read_e57_scan
+            except ModuleNotFoundError:
+                missing_libraries.append("pye57")
+                print("[WARNING] pye57 not installed")
+
+
+        # 3. Try with Open3D
         try:
             self.o3d.t.io.read_point_cloud(first_scan_file)
 
@@ -129,7 +161,7 @@ class GenericDataset:
         except:
             tried_libraries.append("open3d")
 
-        # 3. Try with trimesh
+        # 4. Try with trimesh
         try:
             import trimesh
 
@@ -140,7 +172,7 @@ class GenericDataset:
         except:
             tried_libraries.append("trimesh")
 
-        # 4. Try with PyntCloud
+        # 5. Try with PyntCloud
         try:
             from pyntcloud import PyntCloud
 
